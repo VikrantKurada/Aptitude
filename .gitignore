@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Aptitude
+.aptitude-cache/
+out/
+
+# Env
+.env
