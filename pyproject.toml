@@ -1,0 +1,23 @@
+# pyproject.toml
+[project]
+name = "aptitude"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["typer>=0.12", "httpx>=0.27", "pypdf>=4.2",
+                "ebooklib>=0.18", "beautifulsoup4>=4.12", "tomli-w>=1.0"]
+
+[project.optional-dependencies]
+claude = ["anthropic>=0.34"]
+gemini = ["google-genai>=0.3"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+aptitude = "aptitude.cli:app"
+
+[tool.pytest.ini_options]
+markers = ["live: hits real provider APIs (deselected by default)"]
+addopts = "-m 'not live'"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
