@@ -16,6 +16,15 @@ class EpubAdapter(IngestionAdapter):
         title = (book.get_metadata("DC", "title") or [("Untitled",)])[0][0]
         sections = []
         for item in book.get_items_of_type(ITEM_DOCUMENT):
+            if isinstance(item, epub.EpubNav):
+                # EPUB3 navigation/TOC document — not real content.
+                # ebooklib reconstructs it as an EpubNav instance when parsing the
+                # manifest's `properties="nav"` attribute (see ebooklib.epub's
+                # EpubReader._load_manifest); note that ebooklib does NOT copy
+                # `properties` onto the item itself in that code path, so
+                # `getattr(item, "properties", None)` is empty here and can't be
+                # used to detect it. isinstance is the reliable signal.
+                continue
             text = BeautifulSoup(item.get_content(), "html.parser").get_text(" ", strip=True)
             if text:
                 sections.append(Section(item.get_name(), text))
