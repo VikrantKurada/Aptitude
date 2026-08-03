@@ -1,4 +1,3 @@
-from aptitude.models import Document
 from aptitude.process.tokens import estimate_tokens
 from aptitude.process.chunker import chunk_document
 
