@@ -6,7 +6,7 @@ from aptitude.errors import ValidationError
 _NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 def validate_draft(draft: SkillDraft) -> list[str]:
-    if not _NAME.match(draft.name) or len(draft.name) > 64:
+    if not _NAME.fullmatch(draft.name) or len(draft.name) > 64:
         raise ValidationError(f"invalid skill name '{draft.name}'")
     if not draft.description.strip():
         raise ValidationError("description must not be empty")

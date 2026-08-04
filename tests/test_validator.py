@@ -22,3 +22,19 @@ def test_validate_skill_dir(tmp_path):
     (d / "SKILL.md").write_text("no frontmatter")
     with pytest.raises(ValidationError):
         validate_skill_dir(d)
+
+def test_name_with_trailing_newline_raises():
+    with pytest.raises(ValidationError):
+        validate_draft(SkillDraft("good-name\n", "Use when X.", "a" * 50))
+
+def test_name_over_64_chars_raises():
+    with pytest.raises(ValidationError):
+        validate_draft(SkillDraft("a" * 65, "Use when X.", "a" * 50))
+
+def test_description_over_1024_chars_raises():
+    with pytest.raises(ValidationError):
+        validate_draft(SkillDraft("good-name", "x" * 1025, "a" * 50))
+
+def test_whitespace_only_description_raises():
+    with pytest.raises(ValidationError):
+        validate_draft(SkillDraft("good-name", "   ", "a" * 50))
