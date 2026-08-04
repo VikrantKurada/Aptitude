@@ -32,3 +32,24 @@ def test_add_reference_accumulates():
 def test_dispatch_unknown_tool_returns_error_not_raise():
     out = Toolbox(_docs(), read_budget=10000).dispatch("nope", {})
     assert "error" in out.lower() or "unknown" in out.lower()
+
+def test_read_source_bad_index_returns_error():
+    assert "error" in Toolbox(_docs(), read_budget=10000).read_source(99).lower()
+
+def test_read_source_bad_section_returns_error():
+    assert "error" in Toolbox(_docs(), read_budget=10000).read_source(0, section="nope").lower()
+
+def test_dispatch_routes_valid_calls():
+    tb = Toolbox(_docs(), read_budget=10000)
+    assert "DocA" in tb.dispatch("list_sources", {})
+    assert "beta" in tb.dispatch("read_source", {"index": 0, "section": "Body"})
+    tb.dispatch("add_reference", {"relpath": "references/r.md", "content": "c"})
+    assert tb.references and tb.references[-1].relpath == "references/r.md"
+
+def test_dispatch_missing_required_arg_returns_error():
+    tb = Toolbox(_docs(), read_budget=10000)
+    assert "missing argument" in tb.dispatch("read_source", {})
+    assert "missing argument" in tb.dispatch("add_reference", {"content": "x"})
+
+def test_dispatch_non_dict_arguments_does_not_raise():
+    assert "error" in Toolbox(_docs(), read_budget=10000).dispatch("read_source", None).lower()

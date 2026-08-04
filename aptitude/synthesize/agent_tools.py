@@ -51,11 +51,13 @@ class Toolbox:
         return f"saved {relpath}"
 
     def dispatch(self, name: str, arguments: dict) -> str:
+        if not isinstance(arguments, dict):
+            return "error: arguments must be an object"
         try:
             if name == "list_sources":
                 return self.list_sources()
             if name == "read_source":
-                return self.read_source(arguments.get("index"), arguments.get("section"))
+                return self.read_source(arguments["index"], arguments.get("section"))
             if name == "add_reference":
                 return self.add_reference(arguments["relpath"], arguments["content"])
             return f"error: unknown tool '{name}'"
