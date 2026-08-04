@@ -1,0 +1,50 @@
+name: release
+
+# Publishes to PyPI via Trusted Publishing (OIDC) — no API tokens stored anywhere.
+# Trigger a release by publishing a GitHub Release (Releases -> Draft a new release).
+# `workflow_dispatch` builds and validates the artifacts WITHOUT publishing, so you
+# can dry-run the build before cutting a real release.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    # Only publish for a real GitHub Release, never on manual dispatch (which is a dry run).
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # REQUIRED for PyPI Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
