@@ -2,15 +2,21 @@ from aptitude.llm.base import LLMProvider, provider_registry
 from aptitude.errors import ProviderError
 from aptitude.config import api_key_for, DEFAULT_MODELS
 
+def _build_claude_kwargs(model, messages, max_tokens=4096):
+    sys = "\n".join(m["content"] for m in messages if m["role"] == "system")
+    conv = [m for m in messages if m["role"] != "system"]
+    kwargs = {"model": model, "max_tokens": max_tokens, "messages": conv}
+    if sys:                      # only include system when non-empty
+        kwargs["system"] = sys
+    return kwargs
+
 class _AnthropicClient:  # lazy real client
     def __init__(self, api_key):
         import anthropic
         self._c = anthropic.Anthropic(api_key=api_key)
     def generate(self, model, messages, **opts):
-        sys = "\n".join(m["content"] for m in messages if m["role"] == "system")
-        conv = [m for m in messages if m["role"] != "system"]
-        resp = self._c.messages.create(model=model, max_tokens=opts.get("max_tokens", 4096),
-                                       system=sys or None, messages=conv)
+        kwargs = _build_claude_kwargs(model, messages, opts.get("max_tokens", 4096))
+        resp = self._c.messages.create(**kwargs)
         return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
 
 @provider_registry.register("claude")
