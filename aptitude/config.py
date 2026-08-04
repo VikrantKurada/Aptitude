@@ -18,7 +18,7 @@ def default_provider(env: dict) -> str:
 def resolve_config(cli: dict, env: dict, toml_path: Path | None) -> dict:
     cfg = dict(DEFAULTS)
     if toml_path and Path(toml_path).exists():
-        cfg.update({k: v for k, v in tomllib.loads(Path(toml_path).read_text()).items()})
+        cfg.update({k: v for k, v in tomllib.loads(Path(toml_path).read_text(encoding="utf-8")).items()})
     env_cfg = {"provider": env.get("APTITUDE_PROVIDER"), "model": env.get("APTITUDE_MODEL")}
     cfg.update({k: v for k, v in env_cfg.items() if v is not None})
     cfg.update({k: v for k, v in cli.items() if v is not None})

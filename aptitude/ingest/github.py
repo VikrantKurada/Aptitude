@@ -34,19 +34,19 @@ class GithubAdapter(IngestionAdapter):
         root = Path(self._clone(src.raw))
         sections, n = [], 0
         for readme in sorted(root.glob("README*")):
-            sections.append(Section(readme.name, readme.read_text(errors="ignore")))
+            sections.append(Section(readme.name, readme.read_text(encoding="utf-8", errors="ignore")))
         docs_dir = root / "docs"
         if docs_dir.is_dir():
             for f in sorted(docs_dir.rglob("*.md")):
                 if f.is_file():
-                    content = f.read_text(errors="ignore")
+                    content = f.read_text(encoding="utf-8", errors="ignore")
                     if content.strip():
                         sections.append(Section(str(f.relative_to(root)), content[:4000]))
         sigs = []
         for f in sorted(root.rglob("*")):
             if f.suffix in _CODE_EXT and ".git" not in f.parts and f.is_file():
                 n += 1
-                lines = [ln.strip() for ln in f.read_text(errors="ignore").splitlines()
+                lines = [ln.strip() for ln in f.read_text(encoding="utf-8", errors="ignore").splitlines()
                          if _SIG.match(ln)]
                 if lines:
                     sigs.append(f"{f.relative_to(root)}:\n  " + "\n  ".join(lines))

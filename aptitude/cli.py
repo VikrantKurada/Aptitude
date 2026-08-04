@@ -18,7 +18,7 @@ from aptitude.errors import AptitudeError
 app = typer.Typer(help="Aptitude — generate skills from artifacts.")
 
 def _read_prompt(p: str) -> str:
-    return Path(p[1:]).read_text() if p.startswith("@") else p
+    return Path(p[1:]).read_text(encoding="utf-8") if p.startswith("@") else p
 
 @app.command()
 def create(prompt: str = typer.Option(..., "--prompt", "-p"),
@@ -82,5 +82,5 @@ def init():
     p = Path("aptitude.toml")
     if p.exists():
         typer.echo("aptitude.toml already exists"); raise typer.Exit(1)
-    p.write_text('provider = "ollama"\nmodel = "llama3.1"\nformat = "claude-skill"\n')
+    p.write_text('provider = "ollama"\nmodel = "llama3.1"\nformat = "claude-skill"\n', encoding="utf-8")
     typer.echo("wrote aptitude.toml")

@@ -16,8 +16,8 @@ class GenericPromptExporter(Exporter):
     def export(self, draft, out_dir) -> list[Path]:
         root = Path(out_dir) / draft.name; root.mkdir(parents=True, exist_ok=True)
         sysp = _system_prompt(draft)
-        md = root / f"{draft.name}.md"; md.write_text(f"# {draft.name}\n\n{sysp}\n")
+        md = root / f"{draft.name}.md"; md.write_text(f"# {draft.name}\n\n{sysp}\n", encoding="utf-8")
         js = root / f"{draft.name}.json"
         js.write_text(json.dumps({"name": draft.name, "description": draft.description,
-                                  "system_prompt": sysp}, indent=2))
+                                  "system_prompt": sysp}, indent=2), encoding="utf-8")
         return [md, js]

@@ -9,6 +9,6 @@ class LocalLlmExporter(Exporter):
         root = Path(out_dir) / draft.name; root.mkdir(parents=True, exist_ok=True)
         sysp = _system_prompt(draft)
         mf = root / "Modelfile"
-        mf.write_text(f'FROM llama3.1\nSYSTEM """\n{sysp}\n"""\n')
-        st = root / "system.txt"; st.write_text(sysp + "\n")
+        mf.write_text(f'FROM llama3.1\nSYSTEM """\n{sysp}\n"""\n', encoding="utf-8")
+        st = root / "system.txt"; st.write_text(sysp + "\n", encoding="utf-8")
         return [mf, st]

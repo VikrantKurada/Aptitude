@@ -21,7 +21,7 @@ def validate_skill_dir(path: Path) -> list[str]:
     skill = Path(path) / "SKILL.md"
     if not skill.exists():
         raise ValidationError(f"no SKILL.md in {path}")
-    text = skill.read_text()
+    text = skill.read_text(encoding="utf-8")
     m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
     if not m:
         raise ValidationError("SKILL.md missing YAML frontmatter")
