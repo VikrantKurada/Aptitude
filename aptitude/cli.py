@@ -11,6 +11,7 @@ import aptitude.export.generic_prompt, aptitude.export.local_llm  # noqa
 import aptitude.export.mcp_manifest, aptitude.export.packager  # noqa
 import aptitude.ingest.pdf, aptitude.ingest.epub  # noqa  (registers ingestion adapters)
 import aptitude.ingest.web, aptitude.ingest.github  # noqa
+import aptitude.synthesize.template_synth, aptitude.synthesize.agentic  # noqa  (registers synthesizers)
 from aptitude.pipeline import RunConfig, run
 from aptitude.validate.validator import validate_skill_dir
 from aptitude.errors import AptitudeError
@@ -29,12 +30,15 @@ def create(prompt: str = typer.Option(..., "--prompt", "-p"),
            format: str = typer.Option(None, "--format"),
            out: str = typer.Option("./out", "--out"),
            budget: int = typer.Option(6000, "--budget"),
+           synth: str = typer.Option(None, "--synth"),
+           max_iterations: int = typer.Option(12, "--max-iterations"),
            dry_run: bool = typer.Option(False, "--dry-run"),
            verbose: bool = typer.Option(False, "-v")):
     env = dict(os.environ)
-    cfg = resolve_config({"provider": provider, "model": model, "format": format}, env,
+    cfg = resolve_config({"provider": provider, "model": model, "format": format, "synth": synth}, env,
                          Path("aptitude.toml"))
     prov_name = cfg["provider"] or default_provider(env)
+    synth_name = cfg["synth"]
     fmt_value = cfg["format"]
     fmts = (export_registry.names() if fmt_value == "all"
             else [f.strip() for f in fmt_value.split(",")])
@@ -47,7 +51,8 @@ def create(prompt: str = typer.Option(..., "--prompt", "-p"),
         rc = RunConfig(prompt=_read_prompt(prompt),
                        sources=[Source(i, type) for i in input],
                        provider=prov_name, model=cfg.get("model"), formats=fmts,
-                       out=Path(out), budget=budget, dry_run=dry_run)
+                       out=Path(out), budget=budget, dry_run=dry_run,
+                       synth=synth_name, max_iterations=max_iterations)
         res = run(rc, provider_obj)
     except AptitudeError as e:
         typer.echo(f"error: {e}"); raise typer.Exit(2)

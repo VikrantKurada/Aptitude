@@ -20,6 +20,7 @@ class RunConfig:
     budget: int = 6000
     dry_run: bool = False
     synth: str = "template"
+    max_iterations: int = 12
 
 @dataclass
 class RunResult:
@@ -43,7 +44,11 @@ def run(cfg: RunConfig, provider) -> RunResult:
         return RunResult(draft=None, skipped=skipped,
                          corpus=distill(docs, provider, cfg.budget),
                          exit_code=1 if skipped else 0)
-    synth = synth_registry.get(cfg.synth)(budget=cfg.budget)
+    synth_cls = synth_registry.get(cfg.synth)
+    try:
+        synth = synth_cls(budget=cfg.budget, max_iterations=cfg.max_iterations)
+    except TypeError:
+        synth = synth_cls(budget=cfg.budget)   # template ignores max_iterations
     draft = synth.synthesize(cfg.prompt, docs, provider)
     warnings = validate_draft(draft)
     written = []

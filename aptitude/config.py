@@ -7,7 +7,8 @@ DEFAULT_MODELS = {"claude": "claude-sonnet-5", "gemini": "gemini-2.0-flash",
 _KEY_ENV = {"claude": "ANTHROPIC_API_KEY", "gemini": "GEMINI_API_KEY",
             "nvidia": "NVIDIA_API_KEY", "openai": "OPENAI_API_KEY"}
 DEFAULTS = {"provider": None, "model": None, "format": "claude-skill",
-            "out": "./out", "max_tokens_budget": None, "cache": ".aptitude-cache"}
+            "out": "./out", "max_tokens_budget": None, "cache": ".aptitude-cache",
+            "synth": "template"}
 
 def api_key_for(provider: str, env: dict) -> str | None:
     return env.get(_KEY_ENV.get(provider, ""), None) or None
@@ -20,7 +21,7 @@ def resolve_config(cli: dict, env: dict, toml_path: Path | None) -> dict:
     if toml_path and Path(toml_path).exists():
         cfg.update({k: v for k, v in tomllib.loads(Path(toml_path).read_text(encoding="utf-8")).items()})
     env_cfg = {"provider": env.get("APTITUDE_PROVIDER"), "model": env.get("APTITUDE_MODEL"),
-               "format": env.get("APTITUDE_FORMAT")}
+               "format": env.get("APTITUDE_FORMAT"), "synth": env.get("APTITUDE_SYNTH")}
     cfg.update({k: v for k, v in env_cfg.items() if v is not None})
     cfg.update({k: v for k, v in cli.items() if v is not None})
     return cfg

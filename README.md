@@ -58,20 +58,38 @@ Aptitude can export to multiple formats. Specify via `--format` (default: `claud
 | `mcp-manifest` | MCP resource manifest (JSON) for integration with Model Context Protocol servers |
 | `zip` | Bundles the generated skill directory into a single `.zip`. Combine with `--format all` (or list the formats you want) to include every format; used alone it bundles just the `claude-skill` files. |
 
+## Synthesizers
+
+Aptitude ships two synthesis strategies, selected via `--synth`:
+
+| Synth | Description |
+|-------|-------------|
+| `template` | Default. A fixed, 3-call pipeline (outline → body → refine) against the distilled corpus. Fast, deterministic, and works with every provider — including ones without tool-calling support. |
+| `agentic` | An LLM agent that actively explores the source artifacts with tools (`read_artifact`, `search`, `summarize`, `finish`), is forced through a self-critique pass before finishing, and assembles the final `SKILL.md` from its own findings. Requires a provider/model capable of reliable tool use. |
+
+Select the agentic synthesizer with `--synth agentic`, and tune its iteration budget with `--max-iterations` (default `12`, the max number of agent loop turns before giving up).
+
+**Fallback behavior:** if the agent doesn't converge on a `finish` call within `--max-iterations` (e.g. the model never emits a valid tool call, or the provider doesn't support tools), `agentic` automatically falls back to the `template` synthesizer so the run still succeeds — this is the intended, robust default. The generated skill's provenance notes when the fallback path was used.
+
+```bash
+aptitude create -p "Build a skill for our API" -i docs.pdf --provider claude --synth agentic --max-iterations 20
+```
+
 ## Configuration
 
-Aptitude resolves **provider, model, and output format** with the following precedence (highest to lowest):
+Aptitude resolves **provider, model, output format, and synthesizer** with the following precedence (highest to lowest):
 
-1. **CLI options** (e.g., `--provider claude`, `--model gpt-4o-mini`, `--format zip`)
-2. **Environment variables** (`APTITUDE_PROVIDER`, `APTITUDE_MODEL`, `APTITUDE_FORMAT`)
-3. **`aptitude.toml`** (file in current directory: `provider`, `model`, `format`)
-4. **Defaults** (provider: claude if `ANTHROPIC_API_KEY` else ollama; format: `claude-skill`)
+1. **CLI options** (e.g., `--provider claude`, `--model gpt-4o-mini`, `--format zip`, `--synth agentic`)
+2. **Environment variables** (`APTITUDE_PROVIDER`, `APTITUDE_MODEL`, `APTITUDE_FORMAT`, `APTITUDE_SYNTH`)
+3. **`aptitude.toml`** (file in current directory: `provider`, `model`, `format`, `synth`)
+4. **Defaults** (provider: claude if `ANTHROPIC_API_KEY` else ollama; format: `claude-skill`; synth: `template`)
 
 Example `aptitude.toml`:
 ```toml
 provider = "ollama"
 model = "llama3.1"
 format = "claude-skill"
+synth = "template"
 ```
 
 ## Commands
@@ -91,6 +109,8 @@ aptitude create --prompt "PROMPT" --input FILE [--input FILE ...] [OPTIONS]
 - `--format` — Export format(s): `claude-skill`, `generic-prompt`, `local-llm`, `mcp-manifest`, `zip`, or `all`. Comma-separated for multiple, e.g., `--format claude-skill,zip`. Overrides `APTITUDE_FORMAT` / `aptitude.toml`; ultimate default is `claude-skill`.
 - `--out` — Output directory (default: `./out`). All formats write to `out/<skill-name>/`.
 - `--budget` — Maximum tokens to synthesize (default: 6000).
+- `--synth` — Synthesis strategy: `template` (default) or `agentic`. Overrides `APTITUDE_SYNTH` / `aptitude.toml`; ultimate default is `template`. See [Synthesizers](#synthesizers).
+- `--max-iterations` — Max agent loop turns for `--synth agentic` before falling back to `template` (default: 12). Ignored by `template`.
 - `--dry-run` — Ingest and process the artifacts and print the distilled corpus and planned skill outline, then stop before synthesis. Note: for inputs larger than `--budget`, the distillation step itself summarizes via the selected provider (making LLM calls), so it is not entirely free. Use `--provider ollama` (local) for a zero-cost preview.
 - `-v` — Verbose output.
 

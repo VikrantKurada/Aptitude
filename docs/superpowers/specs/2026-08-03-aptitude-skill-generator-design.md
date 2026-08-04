@@ -239,6 +239,13 @@ applicable format.
   (tools: `read_artifact`, `summarize`, `write_file`) and register it as, e.g.,
   `--synth agentic`. Inputs/outputs are identical to `template_synth`, so no pipeline
   change is needed.
+  **Implemented (V2).** `aptitude/synthesize/agentic.py` registers `AgenticSynthesizer`
+  as `"agentic"`. It runs a ReAct-style loop (`chat()` + tools) against a `Toolbox`
+  exposing `read_artifact`/`search`/`summarize`/`finish`, forces one self-critique pass
+  before accepting `finish`, and falls back to `TemplateSynthesizer` if the agent
+  doesn't converge within `max_iterations`. Selected via `aptitude create --synth
+  agentic [--max-iterations N]`; wired through `RunConfig.synth`/`max_iterations` in
+  `aptitude/pipeline.py` and `aptitude/cli.py`.
 
 ## 12. CLI surface (Typer)
 

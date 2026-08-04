@@ -27,3 +27,10 @@ def test_format_resolves_with_precedence(tmp_path):
 
 def test_format_defaults_to_claude_skill():
     assert resolve_config({}, {}, None)["format"] == "claude-skill"
+
+def test_synth_resolves_with_precedence(tmp_path):
+    from aptitude.config import resolve_config
+    toml = tmp_path / "aptitude.toml"; toml.write_text('synth = "agentic"\n')
+    assert resolve_config({}, {}, toml)["synth"] == "agentic"
+    assert resolve_config({"synth": "template"}, {}, toml)["synth"] == "template"
+    assert resolve_config({}, {}, None)["synth"] == "template"
