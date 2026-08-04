@@ -38,3 +38,17 @@ def test_description_over_1024_chars_raises():
 def test_whitespace_only_description_raises():
     with pytest.raises(ValidationError):
         validate_draft(SkillDraft("good-name", "   ", "a" * 50))
+
+def test_validate_skill_dir_roundtrips_exported_skill(tmp_path):
+    from aptitude.models import SkillDraft
+    from aptitude.export.claude_skill import ClaudeSkillExporter
+    draft = SkillDraft("my-skill", "Use when the user wants to: draft policies", "a" * 60)
+    ClaudeSkillExporter().export(draft, tmp_path)
+    assert validate_skill_dir(tmp_path / "my-skill") == []   # description parsed & valid, no false rejection
+
+def test_validate_skill_dir_1024_char_description_roundtrips(tmp_path):
+    from aptitude.models import SkillDraft
+    from aptitude.export.claude_skill import ClaudeSkillExporter
+    draft = SkillDraft("s", "x" * 1024, "a" * 60)
+    ClaudeSkillExporter().export(draft, tmp_path)
+    assert validate_skill_dir(tmp_path / "s") == []          # exactly at the limit must NOT raise

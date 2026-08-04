@@ -1,9 +1,19 @@
+import json
 import re
 from pathlib import Path
 from aptitude.models import SkillDraft
 from aptitude.errors import ValidationError
 
 _NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+
+def _unquote_scalar(v: str) -> str:
+    v = v.strip()
+    if len(v) >= 2 and v[0] == '"' and v[-1] == '"':
+        try:
+            return json.loads(v)
+        except ValueError:
+            return v
+    return v
 
 def validate_draft(draft: SkillDraft) -> list[str]:
     if not _NAME.fullmatch(draft.name) or len(draft.name) > 64:
@@ -25,6 +35,6 @@ def validate_skill_dir(path: Path) -> list[str]:
     m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
     if not m:
         raise ValidationError("SKILL.md missing YAML frontmatter")
-    fm = dict(re.findall(r"^(\w+):\s*(.+)$", m.group(1), re.M))
+    fm = {k: _unquote_scalar(v) for k, v in re.findall(r"^(\w+):\s*(.+)$", m.group(1), re.M)}
     return validate_draft(SkillDraft(fm.get("name", ""), fm.get("description", ""),
                                      text[m.end():]))
