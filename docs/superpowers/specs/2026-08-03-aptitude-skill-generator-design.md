@@ -236,16 +236,22 @@ applicable format.
 - **New provider:** subclass `LLMProvider` (or `OpenAICompatibleProvider`), register it.
 - **New exporter:** implement `Exporter`, register it.
 - **V2 agentic synthesizer:** implement the `Synthesizer` ABC with an agent loop
-  (tools: `read_artifact`, `summarize`, `write_file`) and register it as, e.g.,
-  `--synth agentic`. Inputs/outputs are identical to `template_synth`, so no pipeline
-  change is needed.
-  **Implemented (V2).** `aptitude/synthesize/agentic.py` registers `AgenticSynthesizer`
-  as `"agentic"`. It runs a ReAct-style loop (`chat()` + tools) against a `Toolbox`
-  exposing `read_artifact`/`search`/`summarize`/`finish`, forces one self-critique pass
-  before accepting `finish`, and falls back to `TemplateSynthesizer` if the agent
-  doesn't converge within `max_iterations`. Selected via `aptitude create --synth
-  agentic [--max-iterations N]`; wired through `RunConfig.synth`/`max_iterations` in
-  `aptitude/pipeline.py` and `aptitude/cli.py`.
+  (tools: `list_sources`, `read_source`, `add_reference`, `finish`) and register it
+  as, e.g., `--synth agentic`. Inputs/outputs are identical to `template_synth`, so
+  no pipeline change is needed.
+  **Implemented (V2).** See
+  `.superpowers/sdd/2026-08-04-agentic-synthesizer/` for the spec/plan.
+  `aptitude/synthesize/agentic.py` registers `AgenticSynthesizer` as `"agentic"`.
+  It runs a ReAct-style loop (`chat()` + tools) against a `Toolbox` (defined in
+  `aptitude/synthesize/agent_tools.py`) exposing `list_sources` (list ingested
+  sources with titles/section headings), `read_source` (read a source's text, or
+  a single section by heading, metered against the read budget), `add_reference`
+  (save a distilled reference file for the final skill), and `finish`; forces one
+  self-critique pass before accepting `finish`, and falls back to
+  `TemplateSynthesizer` if the agent doesn't converge within `max_iterations`.
+  Selected via `aptitude create --synth agentic [--max-iterations N]`; wired
+  through `RunConfig.synth`/`max_iterations` in `aptitude/pipeline.py` and
+  `aptitude/cli.py`.
 
 ## 12. CLI surface (Typer)
 

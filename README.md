@@ -65,7 +65,7 @@ Aptitude ships two synthesis strategies, selected via `--synth`:
 | Synth | Description |
 |-------|-------------|
 | `template` | Default. A fixed, 3-call pipeline (outline → body → refine) against the distilled corpus. Fast, deterministic, and works with every provider — including ones without tool-calling support. |
-| `agentic` | An LLM agent that actively explores the source artifacts with tools (`read_artifact`, `search`, `summarize`, `finish`), is forced through a self-critique pass before finishing, and assembles the final `SKILL.md` from its own findings. Requires a provider/model capable of reliable tool use. |
+| `agentic` | The agentic synthesizer runs an LLM agent loop with tools — `list_sources` and `read_source` to explore the ingested material selectively, `add_reference` to save distilled reference files, a forced self-critique pass, then `finish` — falling back to the template synthesizer if it doesn't converge within `--max-iterations`. Requires a provider/model capable of reliable tool use. |
 
 Select the agentic synthesizer with `--synth agentic`, and tune its iteration budget with `--max-iterations` (default `12`, the max number of agent loop turns before giving up).
 
@@ -89,7 +89,7 @@ Example `aptitude.toml`:
 provider = "ollama"
 model = "llama3.1"
 format = "claude-skill"
-synth = "template"
+synth = "agentic"
 ```
 
 ## Commands
