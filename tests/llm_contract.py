@@ -5,6 +5,5 @@ def assert_provider_contract(provider):
     assert provider.context_window > 0
 
 def assert_chat_contract(provider):
-    from aptitude.models import ToolSpec
     turn = provider.chat([{"role": "user", "content": "hello"}], [])
     assert isinstance(turn.text, str)

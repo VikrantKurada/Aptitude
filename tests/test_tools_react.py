@@ -20,6 +20,11 @@ def test_parse_action_malformed_block_no_calls():
     prose, calls = tools_react.parse_action('```action\n{not json]\n```')
     assert calls == []
 
+def test_parse_action_invalid_json_returns_full_text():
+    inp = "Hmm.\n```action\n{not: valid json}\n```\ntrailing"
+    prose, calls = tools_react.parse_action(inp)
+    assert calls == [] and prose == inp          # full text preserved, nothing dropped
+
 def test_fake_provider_chat_returns_assistant_turn():
     p = FakeProvider(responses=['```action\n{"tool":"read_source","arguments":{"index":1}}\n```'])
     turn = p.chat([{"role": "user", "content": "go"}], TOOLS)
@@ -30,3 +35,14 @@ def test_fake_provider_chat_no_tools_is_plain_text():
     p = FakeProvider(responses=["final answer"])
     turn = p.chat([{"role": "user", "content": "hi"}], [])
     assert turn.text == "final answer" and turn.tool_calls == []
+
+def test_render_prompt_renders_tools_and_transcript():
+    from aptitude.llm.base import ToolCall
+    msgs = [{"role": "user", "content": "U"},
+            {"role": "assistant", "content": "drafting",
+             "tool_calls": [ToolCall("react-0", "read_source", {"index": 0})]},
+            {"role": "tool", "tool_call_id": "react-0", "name": "read_source", "content": "the text"}]
+    out = tools_react.render_prompt(msgs, TOOLS)
+    assert "read_source" in out                    # tool catalog + rendered action
+    assert "action" in out.lower()                 # action-syntax guide
+    assert "OBSERVATION" in out and "the text" in out   # tool result rendered, no crash

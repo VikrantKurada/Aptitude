@@ -34,13 +34,13 @@ def parse_action(text: str):
     m = _ACTION_RE.search(text)
     if not m:
         return text, []
-    prose = text[: m.start()]
     try:
         data = json.loads(m.group(1))
         name = data["tool"]
         args = data.get("arguments", {})
         if not isinstance(args, dict):
-            return prose, []
+            return text, []          # malformed -> full text, no calls
     except (ValueError, KeyError, TypeError):
-        return prose, []
+        return text, []              # malformed -> full text, no calls
+    prose = text[: m.start()]
     return prose, [ToolCall(id="react-0", name=name, arguments=args)]
