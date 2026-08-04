@@ -1,5 +1,7 @@
 # Aptitude
 
+[![tests](https://github.com/VikrantKurada/Aptitude/actions/workflows/tests.yml/badge.svg)](https://github.com/VikrantKurada/Aptitude/actions/workflows/tests.yml)
+
 **Generate AI skills from artifacts.**
 
 Aptitude distills documents, codebases, and web content into structured skills for use with Claude or other LLM providers. It ingests multiple file types (PDFs, EPUBs, GitHub repos, web pages), synthesizes them with an LLM, and exports to multiple formats ready for agent systems.
