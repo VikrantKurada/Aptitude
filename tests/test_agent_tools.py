@@ -60,3 +60,11 @@ def test_add_reference_rejects_path_traversal():
     assert tb.references == []                               # not stored
     tb.add_reference("references/ok.md", "y")
     assert tb.references[0].relpath == "references/ok.md"    # safe path still works
+
+def test_add_reference_rejects_windows_drive_absolute():
+    tb = Toolbox(_docs(), read_budget=10000)
+    assert "invalid" in tb.add_reference(r"C:\Windows\evil.md", "x").lower()
+    assert "invalid" in tb.add_reference("C:/Windows/evil.md", "x").lower()
+    assert tb.references == []                                  # neither stored
+    tb.add_reference("references/ok.md", "y")
+    assert tb.references[0].relpath == "references/ok.md"       # safe path still works

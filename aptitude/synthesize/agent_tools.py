@@ -1,4 +1,5 @@
 # aptitude/synthesize/agent_tools.py
+import re
 from pathlib import PurePosixPath
 from aptitude.models import SkillFile, ToolSpec
 
@@ -50,7 +51,8 @@ class Toolbox:
     def add_reference(self, relpath: str, content: str) -> str:
         norm = str(relpath).replace("\\", "/").strip()
         parts = PurePosixPath(norm).parts
-        if not norm or norm.startswith("/") or PurePosixPath(norm).is_absolute() or ".." in parts:
+        if (not norm or norm.startswith("/") or PurePosixPath(norm).is_absolute()
+                or ".." in parts or re.match(r"^[A-Za-z]:", norm)):
             return f"error: invalid reference path '{relpath}' (must be a relative path without '..')"
         self.references.append(SkillFile(norm, content))
         return f"saved {norm}"
