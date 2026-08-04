@@ -4,17 +4,24 @@ from aptitude.models import Source, Document, Section
 from aptitude.ingest.base import IngestionAdapter, ingest_registry
 from aptitude.errors import IngestionError
 
-_SIG = re.compile(r"^\s*(def |class |function |export (default )?|async def )", re.M)
+_SIG = re.compile(r"^\s*(def |class |function |export (default )?|async def |pub fn |fn |func )", re.M)
 _CODE_EXT = {".py", ".js", ".ts", ".tsx", ".go", ".rs", ".java"}
+
+def _repo_name(raw: str) -> str:
+    last = raw.rstrip("/").rsplit("/", 1)[-1]
+    if last.endswith(".git"):
+        last = last[: -len(".git")]
+    return last
 
 def _default_clone(raw: str) -> Path:
     url = raw if raw.startswith("http") else f"https://github.com/{raw}.git"
-    dest = Path(tempfile.mkdtemp(prefix="aptitude-repo-"))
-    r = subprocess.run(["git", "clone", "--depth", "1", url, str(dest)],
+    parent = Path(tempfile.mkdtemp(prefix="aptitude-repo-"))
+    target = parent / _repo_name(raw)
+    r = subprocess.run(["git", "clone", "--depth", "1", url, str(target)],
                        capture_output=True, text=True)
     if r.returncode != 0:
         raise IngestionError(f"git clone failed for {raw}: {r.stderr.strip()}")
-    return dest
+    return target
 
 @ingest_registry.register("github")
 class GithubAdapter(IngestionAdapter):
@@ -22,15 +29,22 @@ class GithubAdapter(IngestionAdapter):
     def __init__(self, clone=None):
         self._clone = clone or _default_clone
     def can_handle(self, src):
-        return "github.com" in src.raw or bool(re.fullmatch(r"[\w.-]+/[\w.-]+", src.raw))
+        return "github.com" in src.raw or bool(re.fullmatch(r"[\w-]+/[\w.-]+", src.raw))
     def ingest(self, src) -> Document:
         root = Path(self._clone(src.raw))
         sections, n = [], 0
         for readme in sorted(root.glob("README*")):
             sections.append(Section(readme.name, readme.read_text(errors="ignore")))
+        docs_dir = root / "docs"
+        if docs_dir.is_dir():
+            for f in sorted(docs_dir.rglob("*.md")):
+                if f.is_file():
+                    content = f.read_text(errors="ignore")
+                    if content.strip():
+                        sections.append(Section(str(f.relative_to(root)), content[:4000]))
         sigs = []
         for f in sorted(root.rglob("*")):
-            if f.suffix in _CODE_EXT and ".git" not in f.parts:
+            if f.suffix in _CODE_EXT and ".git" not in f.parts and f.is_file():
                 n += 1
                 lines = [ln.strip() for ln in f.read_text(errors="ignore").splitlines()
                          if _SIG.match(ln)]
