@@ -12,6 +12,24 @@ pip install -e ".[dev]"
 
 This installs Aptitude in editable mode with development dependencies (pytest for testing).
 
+## Quick start
+
+The launcher scripts set up a local virtual environment on first run, install Aptitude into it, and then run the CLI — no manual setup needed. Arguments are forwarded straight to `aptitude`.
+
+```bash
+# Linux / macOS
+./start.sh providers
+./start.sh create -p "Build a GDPR privacy-policy skill" -i law.pdf --provider ollama
+```
+
+```powershell
+# Windows (PowerShell)
+.\start.ps1 providers
+.\start.ps1 create -p "Build a GDPR privacy-policy skill" -i law.pdf --provider ollama
+```
+
+Once installed (via the launcher or `pip install -e .`), you can also invoke the CLI directly as `aptitude ...` or `python -m aptitude ...`.
+
 ## Providers
 
 Aptitude supports five LLM providers. Select one via `--provider` (CLI), `APTITUDE_PROVIDER` (env), or `provider` in `aptitude.toml`.
