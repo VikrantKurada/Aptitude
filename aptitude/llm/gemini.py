@@ -8,7 +8,7 @@ class _GeminiClient:
         self._c = genai.Client(api_key=api_key)
     def generate(self, model, messages, **opts):
         text = "\n\n".join(f"{m['role']}: {m['content']}" for m in messages)
-        return self._c.models.generate_content(model=model, contents=text).text
+        return self._c.models.generate_content(model=model, contents=text).text or ""
 
 @provider_registry.register("gemini")
 class GeminiProvider(LLMProvider):

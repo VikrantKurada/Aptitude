@@ -7,7 +7,6 @@ from aptitude.errors import IngestionError
 @ingest_registry.register("pdf")
 class PdfAdapter(IngestionAdapter):
     name = "pdf"
-    def can_handle(self, src): return src.raw.lower().endswith(".pdf")
     def ingest(self, src) -> Document:
         path = Path(src.raw)
         if not path.exists():

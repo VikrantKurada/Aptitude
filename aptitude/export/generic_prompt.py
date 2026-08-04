@@ -19,5 +19,6 @@ class GenericPromptExporter(Exporter):
         md = root / f"{draft.name}.md"; md.write_text(f"# {draft.name}\n\n{sysp}\n", encoding="utf-8")
         js = root / f"{draft.name}.json"
         js.write_text(json.dumps({"name": draft.name, "description": draft.description,
-                                  "system_prompt": sysp}, indent=2), encoding="utf-8")
+                                  "system_prompt": sysp}, indent=2, ensure_ascii=False),
+                      encoding="utf-8")
         return [md, js]

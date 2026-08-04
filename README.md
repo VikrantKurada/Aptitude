@@ -54,23 +54,22 @@ Aptitude can export to multiple formats. Specify via `--format` (default: `claud
 | `generic-prompt` | Single markdown document ready to paste into any LLM chat |
 | `local-llm` | Markdown optimized for local models (compact headers, adjusted for smaller context windows) |
 | `mcp-manifest` | MCP resource manifest (JSON) for integration with Model Context Protocol servers |
-| `zip` | All formats bundled into a single zip archive |
+| `zip` | Bundles the generated skill directory into a single `.zip`. Combine with `--format all` (or list the formats you want) to include every format; used alone it bundles just the `claude-skill` files. |
 
 ## Configuration
 
-Aptitude resolves **provider and model** with the following precedence (highest to lowest):
+Aptitude resolves **provider, model, and output format** with the following precedence (highest to lowest):
 
-1. **CLI options** (e.g., `--provider claude`, `--model gpt-4o-mini`)
-2. **Environment variables** (e.g., `APTITUDE_PROVIDER=claude`, `APTITUDE_MODEL=gpt-4o`)
-3. **`aptitude.toml`** (file in current directory)
-4. **Defaults** (provider: claude if `ANTHROPIC_API_KEY` else ollama)
-
-**Output format** is selected per run via the `--format` CLI option (not configurable via environment or config file).
+1. **CLI options** (e.g., `--provider claude`, `--model gpt-4o-mini`, `--format zip`)
+2. **Environment variables** (`APTITUDE_PROVIDER`, `APTITUDE_MODEL`, `APTITUDE_FORMAT`)
+3. **`aptitude.toml`** (file in current directory: `provider`, `model`, `format`)
+4. **Defaults** (provider: claude if `ANTHROPIC_API_KEY` else ollama; format: `claude-skill`)
 
 Example `aptitude.toml`:
 ```toml
 provider = "ollama"
 model = "llama3.1"
+format = "claude-skill"
 ```
 
 ## Commands
@@ -84,10 +83,10 @@ aptitude create --prompt "PROMPT" --input FILE [--input FILE ...] [OPTIONS]
 **Options:**
 - `--prompt, -p` — Skill description (required). Use `@path/to/file.txt` to read a long prompt from disk.
 - `--input, -i` — Source artifact: file path, GitHub URL, or web URL (repeatable).
-- `--type` — Override artifact-type detection per input: `auto`, `pdf`, `epub`, `web`, or `github` (default: `auto`).
+- `--type` — Force the artifact type for **all** `-i` inputs in this run: `auto`, `pdf`, `epub`, `web`, or `github` (default: `auto`, which detects each input's type independently). Use separate runs if different inputs need different forced types.
 - `--provider` — LLM provider name (overrides env/config).
 - `--model` — Model ID (overrides env/config).
-- `--format` — Export format(s): `claude-skill`, `generic-prompt`, `local-llm`, `mcp-manifest`, `zip`, or `all` (default: `claude-skill`). Comma-separated list for multiple formats, e.g., `--format claude-skill,zip`.
+- `--format` — Export format(s): `claude-skill`, `generic-prompt`, `local-llm`, `mcp-manifest`, `zip`, or `all`. Comma-separated for multiple, e.g., `--format claude-skill,zip`. Overrides `APTITUDE_FORMAT` / `aptitude.toml`; ultimate default is `claude-skill`.
 - `--out` — Output directory (default: `./out`). All formats write to `out/<skill-name>/`.
 - `--budget` — Maximum tokens to synthesize (default: 6000).
 - `--dry-run` — Ingest and process the artifacts and print the distilled corpus and planned skill outline, then stop before synthesis. Note: for inputs larger than `--budget`, the distillation step itself summarizes via the selected provider (making LLM calls), so it is not entirely free. Use `--provider ollama` (local) for a zero-cost preview.

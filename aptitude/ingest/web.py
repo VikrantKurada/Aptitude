@@ -16,7 +16,6 @@ class WebAdapter(IngestionAdapter):
     name = "web"
     def __init__(self, fetch=None):
         self._fetch = fetch or _default_fetch
-    def can_handle(self, src): return src.raw.lower().startswith("http")
     def ingest(self, src) -> Document:
         try:
             html = self._fetch(src.raw)

@@ -17,8 +17,11 @@ def _default_clone(raw: str) -> Path:
     url = raw if raw.startswith("http") else f"https://github.com/{raw}.git"
     parent = Path(tempfile.mkdtemp(prefix="aptitude-repo-"))
     target = parent / _repo_name(raw)
-    r = subprocess.run(["git", "clone", "--depth", "1", url, str(target)],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run(["git", "clone", "--depth", "1", url, str(target)],
+                           capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired as e:
+        raise IngestionError(f"git clone timed out after 300s for {raw}") from e
     if r.returncode != 0:
         raise IngestionError(f"git clone failed for {raw}: {r.stderr.strip()}")
     return target
@@ -28,8 +31,6 @@ class GithubAdapter(IngestionAdapter):
     name = "github"
     def __init__(self, clone=None):
         self._clone = clone or _default_clone
-    def can_handle(self, src):
-        return "github.com" in src.raw or bool(re.fullmatch(r"[\w-]+/[\w.-]+", src.raw))
     def ingest(self, src) -> Document:
         root = Path(self._clone(src.raw))
         sections, n = [], 0

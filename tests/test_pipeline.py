@@ -8,7 +8,6 @@ from aptitude.models import Document, Section
 
 class _StubAdapter(IngestionAdapter):
     name = "stub"
-    def can_handle(self, src): return True
     def ingest(self, src):
         if "bad" in src.raw:
             raise Exception("boom")

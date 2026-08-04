@@ -161,8 +161,8 @@ one. This is what keeps providers and formats independent of each other.
 
 Each is an ABC with a `name` attribute plus one core method:
 
-- `IngestionAdapter.ingest(Source) -> Document`, plus `can_handle(Source) -> bool` for
-  auto-detection.
+- `IngestionAdapter.ingest(Source) -> Document`; source-type auto-detection is handled
+  centrally by `detect_kind()` + the adapter registry (not per-adapter).
 - `LLMProvider.generate(messages, **opts) -> str`, plus `context_window: int`,
   `count_tokens(text) -> int`, and a `capabilities` descriptor.
 - `Synthesizer.synthesize(prompt, docs: list[Document], llm: LLMProvider) -> SkillDraft`.

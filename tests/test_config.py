@@ -17,3 +17,13 @@ def test_default_provider_prefers_claude_key():
 def test_api_key_lookup():
     assert api_key_for("nvidia", {"NVIDIA_API_KEY": "k"}) == "k"
     assert api_key_for("ollama", {}) is None
+
+def test_format_resolves_with_precedence(tmp_path):
+    toml = tmp_path / "aptitude.toml"
+    toml.write_text('format = "generic-prompt"\n')
+    assert resolve_config({}, {}, toml)["format"] == "generic-prompt"          # from toml
+    assert resolve_config({}, {"APTITUDE_FORMAT": "zip"}, toml)["format"] == "zip"  # env beats toml
+    assert resolve_config({"format": "all"}, {"APTITUDE_FORMAT": "zip"}, toml)["format"] == "all"  # cli wins
+
+def test_format_defaults_to_claude_skill():
+    assert resolve_config({}, {}, None)["format"] == "claude-skill"

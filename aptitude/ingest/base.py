@@ -10,8 +10,6 @@ ingest_registry = Registry("adapter")
 class IngestionAdapter(ABC):
     name: str = "base"
     @abstractmethod
-    def can_handle(self, src: Source) -> bool: ...
-    @abstractmethod
     def ingest(self, src: Source) -> Document: ...
 
 def detect_kind(raw: str) -> str:

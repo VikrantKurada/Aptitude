@@ -11,5 +11,6 @@ class McpManifestExporter(Exporter):
         root = Path(out_dir) / draft.name; root.mkdir(parents=True, exist_ok=True)
         manifest = {"tools": [{"name": t.name, "description": t.description,
                                "parameters": t.parameters} for t in draft.tools]}
-        p = root / "mcp.json"; p.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        p = root / "mcp.json"
+        p.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
         return [p]

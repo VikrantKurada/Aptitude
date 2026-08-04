@@ -7,7 +7,6 @@ from aptitude.errors import IngestionError
 @ingest_registry.register("epub")
 class EpubAdapter(IngestionAdapter):
     name = "epub"
-    def can_handle(self, src): return src.raw.lower().endswith(".epub")
     def ingest(self, src) -> Document:
         try:
             book = epub.read_epub(src.raw)

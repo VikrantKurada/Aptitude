@@ -26,17 +26,22 @@ def create(prompt: str = typer.Option(..., "--prompt", "-p"),
            type: str = typer.Option("auto", "--type"),
            provider: str = typer.Option(None, "--provider"),
            model: str = typer.Option(None, "--model"),
-           format: str = typer.Option("claude-skill", "--format"),
+           format: str = typer.Option(None, "--format"),
            out: str = typer.Option("./out", "--out"),
            budget: int = typer.Option(6000, "--budget"),
            dry_run: bool = typer.Option(False, "--dry-run"),
            verbose: bool = typer.Option(False, "-v")):
     env = dict(os.environ)
-    cfg = resolve_config({"provider": provider, "model": model}, env,
+    cfg = resolve_config({"provider": provider, "model": model, "format": format}, env,
                          Path("aptitude.toml"))
     prov_name = cfg["provider"] or default_provider(env)
-    fmts = (export_registry.names() if format == "all"
-            else [f.strip() for f in format.split(",")])
+    fmt_value = cfg["format"]
+    fmts = (export_registry.names() if fmt_value == "all"
+            else [f.strip() for f in fmt_value.split(",")])
+    if verbose:
+        typer.echo(f"provider: {prov_name}"
+                   + (f" (model {cfg['model']})" if cfg.get("model") else "")
+                   + f"  formats: {','.join(fmts)}")
     try:
         provider_obj = build_provider(prov_name, cfg, env)
         rc = RunConfig(prompt=_read_prompt(prompt),
@@ -52,6 +57,9 @@ def create(prompt: str = typer.Option(..., "--prompt", "-p"),
         typer.echo(res.corpus[:2000])
     elif res.draft:
         typer.echo(f"created '{res.draft.name}' → {len(res.written)} files in {out}")
+        if verbose:
+            for path in res.written:
+                typer.echo(f"  wrote {path}")
         for w in res.warnings:
             typer.echo(f"warning: {w}")
     raise typer.Exit(res.exit_code)
