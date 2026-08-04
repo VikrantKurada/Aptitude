@@ -53,3 +53,10 @@ def test_dispatch_missing_required_arg_returns_error():
 
 def test_dispatch_non_dict_arguments_does_not_raise():
     assert "error" in Toolbox(_docs(), read_budget=10000).dispatch("read_source", None).lower()
+
+def test_add_reference_rejects_path_traversal():
+    tb = Toolbox(_docs(), read_budget=10000)
+    assert "invalid" in tb.add_reference("../../evil.md", "x").lower()
+    assert tb.references == []                               # not stored
+    tb.add_reference("references/ok.md", "y")
+    assert tb.references[0].relpath == "references/ok.md"    # safe path still works

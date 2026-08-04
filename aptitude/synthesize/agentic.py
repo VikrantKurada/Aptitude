@@ -3,6 +3,7 @@ from aptitude.synthesize.base import Synthesizer, synth_registry
 from aptitude.synthesize.agent_tools import Toolbox, TOOL_SPECS
 from aptitude.synthesize.template_synth import TemplateSynthesizer, _slug
 from aptitude.synthesize import agent_prompts
+from aptitude.errors import ProviderError, SynthesisError
 
 class _AgentDidNotConverge(Exception):
     pass
@@ -18,10 +19,9 @@ class AgenticSynthesizer(Synthesizer):
     def synthesize(self, prompt, docs, llm) -> SkillDraft:
         try:
             return self._run_agent(prompt, docs, llm)
-        except _AgentDidNotConverge as e:
+        except (_AgentDidNotConverge, ProviderError) as e:
             if not self.fallback:
-                from aptitude.errors import SynthesisError
-                raise SynthesisError(f"agentic synthesis did not converge: {e}")
+                raise SynthesisError(f"agentic synthesis failed: {e}")
             draft = TemplateSynthesizer(budget=self.budget).synthesize(prompt, docs, llm)
             draft.provenance.append("(agentic did not converge → template fallback)")
             return draft
@@ -33,11 +33,12 @@ class AgenticSynthesizer(Synthesizer):
         critique_done = False
         for _ in range(self.max_iterations):
             turn = llm.chat(messages, TOOL_SPECS)
-            messages.append({"role": "assistant", "content": turn.text, "tool_calls": turn.tool_calls})
             if not turn.tool_calls:
+                messages.append({"role": "assistant", "content": turn.text, "tool_calls": []})
                 messages.append({"role": "user", "content": "Use a tool, or call finish."})
                 continue
             call = turn.tool_calls[0]
+            messages.append({"role": "assistant", "content": turn.text, "tool_calls": [call]})
             if call.name == "finish":
                 if not critique_done:
                     critique_done = True
