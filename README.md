@@ -16,13 +16,13 @@ This installs Aptitude in editable mode with development dependencies (pytest fo
 
 Aptitude supports five LLM providers. Select one via `--provider` (CLI), `APTITUDE_PROVIDER` (env), or `provider` in `aptitude.toml`.
 
-| Provider | API Key Environment Variable | Notes |
-|----------|------------------------------|-------|
-| `claude` | `ANTHROPIC_API_KEY` | Anthropic's Claude family |
-| `gemini` | `GEMINI_API_KEY` | Google's Gemini |
-| `nvidia` | `NVIDIA_API_KEY` | NVIDIA's NIM platform (OpenAI-compatible) |
-| `ollama` | None | Local model via Ollama, requires no API key |
-| `openai` | `OPENAI_API_KEY` | OpenAI's GPT models |
+| Provider | API Key Environment Variable | Default Model |
+|----------|------------------------------|---|
+| `claude` | `ANTHROPIC_API_KEY` | `claude-sonnet-5` |
+| `gemini` | `GEMINI_API_KEY` | `gemini-2.0-flash` |
+| `nvidia` | `NVIDIA_API_KEY` | `meta/llama-3.1-70b-instruct` |
+| `ollama` | None (local) | `llama3.1` |
+| `openai` | `OPENAI_API_KEY` | `gpt-4o-mini` |
 
 If no provider is specified and `ANTHROPIC_API_KEY` is set, defaults to `claude`; otherwise defaults to `ollama`.
 
@@ -40,18 +40,19 @@ Aptitude can export to multiple formats. Specify via `--format` (default: `claud
 
 ## Configuration
 
-Aptitude resolves configuration with the following precedence (highest to lowest):
+Aptitude resolves **provider and model** with the following precedence (highest to lowest):
 
 1. **CLI options** (e.g., `--provider claude`, `--model gpt-4o-mini`)
 2. **Environment variables** (e.g., `APTITUDE_PROVIDER=claude`, `APTITUDE_MODEL=gpt-4o`)
 3. **`aptitude.toml`** (file in current directory)
-4. **Defaults** (provider: claude if `ANTHROPIC_API_KEY` else ollama; format: claude-skill)
+4. **Defaults** (provider: claude if `ANTHROPIC_API_KEY` else ollama)
+
+**Output format** is selected per run via the `--format` CLI option (not configurable via environment or config file).
 
 Example `aptitude.toml`:
 ```toml
 provider = "ollama"
 model = "llama3.1"
-format = "claude-skill"
 ```
 
 ## Commands
@@ -63,15 +64,16 @@ aptitude create --prompt "PROMPT" --input FILE [--input FILE ...] [OPTIONS]
 ```
 
 **Options:**
-- `--prompt, -p` — Skill description (required)
-- `--input, -i` — Source artifact: file path, GitHub URL, or web URL (repeatable)
-- `--provider` — LLM provider name (overrides env/config)
-- `--model` — Model ID (overrides env/config)
-- `--format` — Export format(s): `claude-skill`, `generic-prompt`, `local-llm`, `mcp-manifest`, `zip`, or `all` (default: `claude-skill`)
-- `--out` — Output directory (default: `./out`)
-- `--budget` — Maximum tokens to synthesize (default: 6000)
-- `--dry-run` — Parse and ingest without LLM synthesis; preview the corpus
-- `-v` — Verbose output
+- `--prompt, -p` — Skill description (required). Use `@path/to/file.txt` to read a long prompt from disk.
+- `--input, -i` — Source artifact: file path, GitHub URL, or web URL (repeatable).
+- `--type` — Override artifact-type detection per input: `auto`, `pdf`, `epub`, `web`, or `github` (default: `auto`).
+- `--provider` — LLM provider name (overrides env/config).
+- `--model` — Model ID (overrides env/config).
+- `--format` — Export format(s): `claude-skill`, `generic-prompt`, `local-llm`, `mcp-manifest`, `zip`, or `all` (default: `claude-skill`). Comma-separated list for multiple formats, e.g., `--format claude-skill,zip`.
+- `--out` — Output directory (default: `./out`). All formats write to `out/<skill-name>/`.
+- `--budget` — Maximum tokens to synthesize (default: 6000).
+- `--dry-run` — Ingest and process the artifacts and print the distilled corpus and planned skill outline, then stop before synthesis. Note: for inputs larger than `--budget`, the distillation step itself summarizes via the selected provider (making LLM calls), so it is not entirely free. Use `--provider ollama` (local) for a zero-cost preview.
+- `-v` — Verbose output.
 
 ### `providers` — List available providers and their configuration status
 
@@ -116,7 +118,7 @@ aptitude create \
   --provider ollama
 ```
 
-Output: `./out/` containing a `claude-skill/` directory with SKILL.md and supporting files.
+Output: `./out/<skill-name>/` containing SKILL.md and supporting files in a flat structure.
 
 ### 2. Repository + Web Page → All Formats via Claude
 
@@ -131,20 +133,21 @@ aptitude create \
   --format all
 ```
 
-Output: `./out/` containing subdirectories for each format (claude-skill/, generic-prompt/, etc.) plus a zip file.
+Output: `./out/<skill-name>/` containing all format files in a flat structure (SKILL.md, `<skill-name>.md`, `<skill-name>.json`, Modelfile, system.txt, mcp.json, and reference materials), plus `./out/<skill-name>.zip` bundling the entire skill directory.
 
 ### 3. Preview the Corpus Without Synthesis
 
-Parse and ingest sources without calling an LLM—useful to preview what will be synthesized:
+Preview the distilled corpus before committing to a full skill synthesis, using a zero-cost local provider:
 
 ```bash
 aptitude create \
-  --prompt "..." \
+  --prompt "Skill for analyzing quarterly earnings reports" \
   --input big-book.epub \
+  --provider ollama \
   --dry-run
 ```
 
-Output: Prints the extracted and chunked corpus (first 2000 characters) to stdout. No LLM calls are made; no output files are written.
+Output: Prints the extracted and processed corpus (first 2000 characters) to stdout, then exits without writing files or calling the LLM synthesis step. Use `--provider ollama` (or another local provider) to avoid API charges. Note: if the corpus exceeds `--budget` tokens, the distillation step will still call the provider to summarize chunks.
 
 ## See Also
 
