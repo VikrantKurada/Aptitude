@@ -6,7 +6,7 @@ from aptitude.process.summarizer import distill
 
 def _slug(text: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", text.strip().lower()).strip("-")
-    return s[:64] or "generated-skill"
+    return s[:64].strip("-") or "generated-skill"
 
 @synth_registry.register("template")
 class TemplateSynthesizer(Synthesizer):
@@ -16,7 +16,8 @@ class TemplateSynthesizer(Synthesizer):
     def synthesize(self, prompt, docs, llm) -> SkillDraft:
         corpus = distill(docs, llm, self.budget)
         nd = llm.generate(prompts.name_desc_prompt(prompt, corpus))
-        name = _slug(re.search(r"name:\s*(.+)", nd).group(1) if re.search(r"name:", nd) else "skill")
+        name_m = re.search(r"name:\s*(.+)", nd)
+        name = _slug(name_m.group(1) if name_m else "skill")
         desc_m = re.search(r"description:\s*(.+)", nd, re.S)
         description = (desc_m.group(1).strip() if desc_m else prompt)[:1024]
         body = llm.generate(prompts.body_prompt(prompt, corpus)).strip()

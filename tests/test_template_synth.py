@@ -22,3 +22,15 @@ def test_name_is_slugified_if_model_returns_spaces():
         "name: Privacy Policy Drafter\ndescription: d", "body", "ref"])
     draft = TemplateSynthesizer().synthesize("p", _docs(), llm)
     assert draft.name == "privacy-policy-drafter"
+
+def test_unstructured_name_desc_falls_back_without_crashing():
+    llm = FakeProvider(responses=["no structured output at all", "body text", "ref text"])
+    draft = TemplateSynthesizer().synthesize("make a widget skill", _docs(), llm)
+    assert draft.name == "skill"
+    assert draft.description == "make a widget skill"
+
+def test_name_key_present_but_empty_does_not_crash():
+    llm = FakeProvider(responses=["intro text ending in name:", "body", "ref"])
+    draft = TemplateSynthesizer().synthesize("p", _docs(), llm)
+    assert draft.name
+    assert "-" in draft.name or draft.name.isalnum()
