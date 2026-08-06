@@ -41,7 +41,7 @@ Aptitude exports to five formats, selected via `--format` (default: `claude-skil
 |--------|-------------|
 | `claude-skill` | `SKILL.md` (with YAML frontmatter) plus reference/script files, for use in Claude Canvas or Skill Builder |
 | `generic-prompt` | A single markdown document and a matching JSON file, ready to paste into any LLM chat |
-| `local-llm` | An Ollama `Modelfile` plus a plain `system.txt`, sized for smaller local-model context windows |
+| `local-llm` | An Ollama `Modelfile` (skill content as the `SYSTEM` prompt) plus a plain `system.txt` for runtimes like LM Studio — the same prompt content as `generic-prompt`, just packaged differently; not smaller and not context-window-adjusted |
 | `mcp-manifest` | An MCP resource manifest (JSON) for integration with Model Context Protocol servers |
 | `zip` | Runs the `claude-skill` export, then bundles that directory into a single `<skill-name>.zip` |
 
@@ -53,7 +53,7 @@ Aptitude ships two synthesis strategies, selected via `--synth`:
 
 | Synth | Description |
 |-------|-------------|
-| `template` (default) | A fixed, 3-call pipeline (name/description → body → reference material) against the distilled corpus. Deterministic, and works with every provider, including ones without tool-calling support. |
+| `template` (default) | A fixed, 3-call pipeline (name/description → body → reference material) against the distilled corpus. Same 3 calls in the same order every run, no branching and no agent loop — unlike `agentic`, the call sequence never varies — and it works with every provider, including ones without tool-calling support. Nothing in the pipeline pins a temperature or seed, so model output for a given call can still vary between runs. |
 | `agentic` | Runs an LLM agent loop with tools: `list_sources` and `read_source` to explore the ingested material selectively, `add_reference` to save distilled reference files, then `finish`. Requires a provider/model capable of reliable tool use. |
 
 Select the agentic synthesizer with `--synth agentic`, and tune its iteration budget with `--max-iterations` (default `12`).
@@ -69,7 +69,7 @@ aptitude create -p "Build a skill for our API" -i docs.pdf --provider claude --s
 ## Cost and Latency
 
 - `template` makes a fixed 3 provider calls per run (name/description, body, reference material), regardless of corpus size, beyond whatever calls distillation itself makes (see `--dry-run` below).
-- `agentic` makes up to `--max-iterations` provider calls (default 12) — one per agent turn — plus one additional forced self-critique turn before the accepted `finish`. If it exhausts that budget without converging, it then also pays for `template`'s 3 calls as a fallback, so a non-converging `agentic` run can cost more than either strategy run alone.
+- `agentic` makes at most `--max-iterations` provider calls total (default 12) — one call per agent-loop iteration, hard-capped by the loop bound. The forced self-critique consumes one of those iterations like any other turn; it is not an extra call on top (see [Synthesizers](#synthesizers)). If the budget runs out without an accepted `finish` — including when the critique lands on the final iteration, leaving no iteration left for the second `finish` — the run falls back to `template` and pays its 3 calls on top of the exhausted budget, so the true worst case is `max_iterations + 3` provider calls, not `max_iterations + 1`.
 - `--dry-run` stops after ingestion and distillation, before synthesis, and prints the first 2000 characters of the distilled corpus. It is not free: if the combined corpus exceeds `--budget` tokens, the distillation step summarizes the overflow through the selected provider, which makes LLM calls.
 - Use `--provider ollama` for a zero-cost, local preview — this applies to normal runs and to `--dry-run` runs whose corpus exceeds `--budget`.
 
