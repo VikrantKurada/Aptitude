@@ -72,7 +72,7 @@ Override it when the API has native tool calling, which is faster and more relia
 
 The translation layer between Aptitude's message dicts and each vendor's wire format lives next to each provider: `_to_anthropic` (`llm/claude.py:13-29`), `_to_gemini_contents` (`llm/gemini.py:5-21`), `_to_openai_messages` (`llm/openai.py:11-23`), `_to_ollama_messages` (`llm/ollama.py:6-17`). Copy the closest one.
 
-### 3. OpenAI-compatible endpoints are six lines
+### 3. OpenAI-compatible endpoints are eight lines
 
 If the endpoint speaks the OpenAI chat-completions API, subclass `OpenAICompatibleProvider` instead and supply only a default model and a base URL. That is the whole of the `nvidia` provider (`llm/openai.py:67-74`):
 
@@ -224,11 +224,11 @@ Add the detection case to the parametrized list in `tests/test_ingest_base.py`, 
 
 - **Tests are offline.** No test in the suite makes a network call. Providers take an injectable client, adapters take an injectable fetch or clone, and `FakeProvider` (`aptitude/llm/fake.py`) returns scripted strings — including the fenced action blocks that drive the whole agentic loop (`tests/test_agentic_happy.py`).
 - **Tests are deterministic.** Nothing in a test depends on model output. Note that this is a property of the tests, not of Aptitude: `template` makes the same three provider calls every run, but nothing in `aptitude/` pins a temperature or a seed, so real output varies between runs.
-- **Live tests are opt-in.** A test that hits a real provider API must be marked `@pytest.mark.live`. The marker is declared in `pyproject.toml` and `addopts = "-m 'not live'"` deselects it by default, so `pytest` stays offline and `pytest -m live` runs them deliberately.
-- **Run the whole suite before you commit.** 36 test files, and CI runs them on Python 3.11, 3.12, 3.13, and 3.14.
+- **Live tests are opt-in.** A test that hits a real provider API must be marked `@pytest.mark.live`. The marker is declared in `pyproject.toml` and `addopts = "-m 'not live'"` deselects it by default, so `pytest` stays offline. No test carries the marker today, so `pytest -m live` currently collects nothing — it is the command for running such tests deliberately once some exist.
+- **Run the whole suite before you commit.** 33 `test_*.py` modules (`tests/` also holds `__init__.py` and the two shared contract helpers, which pytest doesn't collect), and CI runs them on Python 3.11, 3.12, 3.13, and 3.14.
 
 ```bash
 pip install -e ".[dev]"
 python -m pytest -q          # offline, live tests deselected
-python -m pytest -m live     # only if you have keys and mean it
+python -m pytest -m live     # collects nothing today; for live tests once they exist
 ```
