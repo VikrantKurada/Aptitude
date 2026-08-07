@@ -1,6 +1,6 @@
 # What Aptitude Does
 
-Aptitude turns a prompt plus a set of artifacts (PDFs, EPUBs, web pages, GitHub repos) into a reusable skill. Every run follows the same fixed pipeline: `Ingest → Process → Synthesize → Export` — see the architecture page for how each stage works internally.
+Aptitude turns a prompt plus a set of artifacts (PDFs, EPUBs, web pages, GitHub repos) into a reusable skill. Every run follows the same fixed pipeline: `Ingest → Process → Synthesize → Export` — see [the architecture page](../engineering/architecture.md) for how each stage works internally.
 
 ## Inputs
 
@@ -31,7 +31,7 @@ Aptitude supports five LLM providers, selected via `--provider` (CLI), `APTITUDE
 
 If no provider is resolved from CLI, env, or `aptitude.toml`, Aptitude defaults to `claude` when `ANTHROPIC_API_KEY` is set in the environment, and to `ollama` otherwise.
 
-`nvidia` and `openai` are two registrations of the same OpenAI-compatible client implementation (`OpenAICompatibleProvider`) — they differ only in default model, API key variable, and default base URL. That base URL (`base_url`) can be overridden per run, but only as a key in `aptitude.toml`; there is no `--base-url` CLI flag and no environment variable for it. See the limitations page for other configuration-surface gaps.
+`nvidia` and `openai` are two registrations of the same OpenAI-compatible client implementation (`OpenAICompatibleProvider`) — they differ only in default model, API key variable, and default base URL. That base URL (`base_url`) can be overridden per run, but only as a key in `aptitude.toml`; there is no `--base-url` CLI flag and no environment variable for it. See [the limitations page](../limitations.md) for other configuration-surface gaps.
 
 ## Output Formats
 
@@ -45,7 +45,7 @@ Aptitude exports to five formats, selected via `--format` (default: `claude-skil
 | `mcp-manifest` | An MCP resource manifest (JSON) for integration with Model Context Protocol servers |
 | `zip` | Runs the `claude-skill` export, then bundles that directory into a single `<skill-name>.zip` |
 
-`mcp-manifest` currently ships no content: `SkillDraft` has a `tools` field for MCP tool specs, but neither the `template` synthesizer nor the `agentic` synthesizer populates it — the agentic synthesizer's own tools (`list_sources`, `read_source`, `add_reference`, `finish`) are for exploring source material during synthesis, not for the resulting skill. Because `draft.tools` is always empty, the exporter returns without writing any file at all (not even an `mcp.json` with an empty tools array). See the limitations page for tracking status.
+`mcp-manifest` currently ships no content: `SkillDraft` has a `tools` field for MCP tool specs, but neither the `template` synthesizer nor the `agentic` synthesizer populates it — the agentic synthesizer's own tools (`list_sources`, `read_source`, `add_reference`, `finish`) are for exploring source material during synthesis, not for the resulting skill. Because `draft.tools` is always empty, the exporter returns without writing any file at all (not even an `mcp.json` with an empty tools array). See [the limitations page](../limitations.md) for tracking status.
 
 ## Synthesizers
 
@@ -60,7 +60,7 @@ Select the agentic synthesizer with `--synth agentic`, and tune its iteration bu
 
 **Forced self-critique:** the first time the agent calls `finish`, Aptitude does not accept it. It sends one forced critique prompt back to the model and requires a second `finish` call before the draft is accepted. That extra round counts against `--max-iterations`.
 
-**Fallback behavior:** if the agent doesn't reach an accepted `finish` within `--max-iterations` turns — e.g. the model never emits a valid tool call, or the provider doesn't support tools — `agentic` automatically falls back to running the `template` synthesizer's 3-call pipeline instead, so the run still succeeds. The generated draft's `provenance` list then includes the line `(agentic did not converge → template fallback)`, so you can tell which path produced a given skill.
+**Fallback behavior:** if the agent doesn't reach an accepted `finish` within `--max-iterations` turns — e.g. the model never emits a valid tool call, or the provider doesn't support tools — `agentic` automatically falls back to running the `template` synthesizer's 3-call pipeline instead, so the run still succeeds. The generated draft's `provenance` list then includes the line `(agentic did not converge → template fallback)` (`aptitude/synthesize/agentic.py:26`). That line never reaches the output directory, though: no exporter writes `provenance` to disk, so a caller using Aptitude as a library can tell which path produced a draft and a CLI user cannot. See [the limitations page](../limitations.md#provenance-is-never-written-to-disk).
 
 ```bash
 aptitude create -p "Build a skill for our API" -i docs.pdf --provider claude --synth agentic --max-iterations 20
@@ -69,7 +69,7 @@ aptitude create -p "Build a skill for our API" -i docs.pdf --provider claude --s
 ## Cost and Latency
 
 - `template` makes a fixed 3 provider calls per run (name/description, body, reference material), regardless of corpus size, beyond whatever calls distillation itself makes (see `--dry-run` below).
-- `agentic` makes at most `--max-iterations` provider calls total (default 12) — one call per agent-loop iteration, hard-capped by the loop bound. The forced self-critique consumes one of those iterations like any other turn; it is not an extra call on top (see [Synthesizers](#synthesizers)). If the budget runs out without an accepted `finish` — including when the critique lands on the final iteration, leaving no iteration left for the second `finish` — the run falls back to `template` and pays its 3 calls on top of the exhausted budget, so the true worst case is `max_iterations + 3` provider calls, not `max_iterations + 1`.
+- `agentic`'s agent loop makes at most `--max-iterations` provider calls (default 12) — one call per iteration, hard-capped by the loop bound. The forced self-critique consumes one of those iterations like any other turn; it is not an extra call on top (see [Synthesizers](#synthesizers)). If the budget runs out without an accepted `finish` — including when the critique lands on the final iteration, leaving no iteration left for the second `finish` — the run falls back to `template` and pays its 3 calls on top of the exhausted budget. Those 3 are not the whole bill: `template` starts by calling `distill()`, which makes one provider call per chunk whenever the corpus exceeds `--budget` (`aptitude/process/summarizer.py:22-23`), plus one more if the joined summaries still overflow (`summarizer.py:25-29`). So the worst case is `max_iterations + 3 + one call per chunk`, not `max_iterations + 1`. Chunks are capped at `max(500, budget // 4)` (`summarizer.py:22`), so at the default `--budget 6000` they are 1500 tokens each: a 50,000-token corpus is about 34 chunks, and 12 iterations that go nowhere on it cost roughly 12 + 34 + 3 = 49 provider calls, not 15.
 - `--dry-run` stops after ingestion and distillation, before synthesis, and prints the first 2000 characters of the distilled corpus. It is not free: if the combined corpus exceeds `--budget` tokens, the distillation step summarizes the overflow through the selected provider, which makes LLM calls.
 - Use `--provider ollama` for a zero-cost, local preview — this applies to normal runs and to `--dry-run` runs whose corpus exceeds `--budget`.
 

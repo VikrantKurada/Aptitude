@@ -4,7 +4,7 @@ Seven calls, each with the alternative it beat and the thing that would undo it.
 
 Several of these were written down before implementation, which is the only reason the rejected alternatives here are trustworthy: the v1 design spec's §3 non-goals and §11 extension point, and the V2 spec's §4, headed "Key decisions (from brainstorming)". Where an alternative is quoted, it was rejected at the time and not in hindsight.
 
-The mechanics behind decisions 4 and 5 are in [The Architect's View](architecture.md); the sequencing argument behind decision 3 is expanded in the product view. The prior question — why reshaping documents into skills is worth automating at all — is [a different essay](../why.md).
+The mechanics behind decisions 4 and 5 are in [The Architect's View](architecture.md); the sequencing argument behind decision 3 is expanded in [the product view](../product/perspective.md). The prior question — why reshaping documents into skills is worth automating at all — is [a different essay](../why.md).
 
 ## 1. A pluggable pipeline, not a monolith
 
@@ -64,4 +64,4 @@ What is worth noticing is how little of the deferral's *content* survived. The �
 
 **What was rejected.** Zero and unbounded, for different reasons. Zero produced drafts that read as weaker — descriptions that restated the prompt rather than narrowing it into a trigger. Unbounded costs one provider call per extra round with no reason to expect the fourth to add what the second did.
 
-**What would change my mind.** Scoring, which does not exist. Nothing in this repository evaluates a generated skill. `validate_draft` checks that the name matches `^[a-z0-9]+(-[a-z0-9]+)*$` and is at most 64 characters, that the description is non-empty and at most 1024, and warns when the body is under 40 characters (`aptitude/validate/validator.py:18-28`). That is well-formedness, not quality. So "one" is not a tuned number. It is a guess that survived reading the output, and two would be defensible on exactly as much evidence, which is to say none. This is the only one of the seven where there is no fact to point at, which makes it the first I would revisit and makes an evaluation harness the roadmap item that matters most.
+**What would change my mind.** Scoring, which does not exist. Nothing in this repository evaluates a generated skill. `validate_draft` checks that the name matches `^[a-z0-9]+(-[a-z0-9]+)*$` and is at most 64 characters, that the description is non-empty and at most 1024, and warns when the body is under 40 characters (`aptitude/validate/validator.py:18-28`). That is well-formedness, not quality. So "one" is not a tuned number. It is a guess that survived reading the output, and two would be defensible on exactly as much evidence, which is to say none. This is the only one of the seven where there is no fact to point at, which makes it the first I would revisit and makes an evaluation harness the [roadmap item](../product/roadmap.md) that matters most.

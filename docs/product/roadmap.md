@@ -2,7 +2,7 @@
 
 There is one rule holding this page together: nothing gets a near-term row unless it is a gap that already exists in the code. Not a feature someone wanted. A line that is missing, or a line that is wrong, with a file and a number next to it.
 
-That rule is cheap to apply here because the gaps were written down first. [limitations.md](../limitations.md) is seven sections, each naming a file and a line, and it was written by reading the source rather than the plan. The near-term table below is that list with an intention attached to each entry, plus one gap found after it was written. If a row here has no counterpart there, it does not belong in Near.
+That rule is cheap to apply here because the gaps were written down first. [limitations.md](../limitations.md) is eight sections, each naming a file and a line, and it was written by reading the source rather than the plan. The near-term table below is that list with an intention attached to each entry. If a row here has no counterpart there, it does not belong in Near.
 
 There are no dates. The ordering is the claim; a calendar would be a second claim, and one nobody could check.
 
@@ -18,9 +18,9 @@ None of these needs a new abstraction. Most are a handful of lines. The two that
 | Bounded retries with backoff | `llm/ollama.py:27-31` converts any exception straight into `ProviderError`; `llm/openai.py:32-38` does not wrap the request at all. Because synthesis runs after ingestion, one transient 503 throws away a completed clone, chunk and distill. | [No retries](../limitations.md#no-retries) |
 | `--base-url` as a CLI flag and an env var | The value is already consumed by `build()` in `llm/openai.py:65,74` and `llm/ollama.py:58`. The only way to set it is `aptitude.toml`, so pointing at LM Studio or vLLM for one run means writing a file. | [`--base-url` is TOML-only](../limitations.md#--base-url-is-toml-only) |
 | Delete `max_tokens_budget` | `config.py:10` declares it beside `format` and `synth`, so it reads like a working knob. It appears exactly once in the repository. Setting it does nothing. | [`max_tokens_budget` is dead config](../limitations.md#max_tokens_budget-is-dead-config) |
-| Write `provenance` into the exported skill | Searching `aptitude/export/` for `provenance` returns nothing. `claude_skill.py` writes name and description frontmatter, the body, references and scripts, and nothing else, so `(agentic did not converge → template fallback)` lives on the in-memory draft and never reaches a CLI user. | Found after limitations.md was written; footnote 2 of [The Architect's View](../engineering/architecture.md) |
+| Write `provenance` into the exported skill | Searching `aptitude/export/` for `provenance` returns nothing. `claude_skill.py` writes name and description frontmatter, the body, references and scripts, and nothing else, so `(agentic did not converge → template fallback)` lives on the in-memory draft and never reaches a CLI user. | [`provenance` is never written to disk](../limitations.md#provenance-is-never-written-to-disk) |
 
-That covers six of the seven. The remaining one — [`scripts` and `tools` are never populated](../limitations.md#scripts-and-tools-are-never-populated) — is deliberately not in the table. Filling those two fields is not a fix; it is a feature with open design questions attached, and it is in Far.
+That covers seven of the eight. The remaining one — [`scripts` and `tools` are never populated](../limitations.md#scripts-and-tools-are-never-populated) — is deliberately not in the table. Filling those two fields is not a fix; it is a feature with open design questions attached, and it is in Far.
 
 ## Mid — make generated skills verifiable
 
