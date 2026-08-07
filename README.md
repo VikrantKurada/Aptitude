@@ -1,18 +1,30 @@
 # Aptitude
 
-[![tests](https://github.com/VikrantKurada/Aptitude/actions/workflows/tests.yml/badge.svg)](https://github.com/VikrantKurada/Aptitude/actions/workflows/tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/aptitude.svg)](https://pypi.org/project/aptitude/) [![Python versions](https://img.shields.io/pypi/pyversions/aptitude.svg)](https://pypi.org/project/aptitude/) [![tests](https://github.com/VikrantKurada/Aptitude/actions/workflows/tests.yml/badge.svg)](https://github.com/VikrantKurada/Aptitude/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Generate AI skills from artifacts.**
 
 Aptitude reads PDFs, EPUBs, web pages, and GitHub repositories, and turns them — plus a one-line prompt — into a reusable skill: a `SKILL.md` with its supporting files, or the same content repackaged for another runtime. The artifacts say what is true, the prompt says what is relevant.
 
+```mermaid
+flowchart LR
+    A["artifacts<br/>pdf · epub · web · github"] --> I[Ingest]
+    Q(["prompt"]) -. what matters .-> S
+    I --> P["Process<br/>chunk · distill"]
+    P --> S{"Synthesize<br/>template · agentic"}
+    S --> D["SkillDraft"]
+    D --> E["Export<br/>claude-skill · generic-prompt<br/>local-llm · mcp-manifest · zip"]
+```
+
+The [Architect's View](docs/engineering/architecture.md) explains why every path through that picture crosses the box in the middle, and why five providers × five formats × two synthesizers is fifty working combinations rather than fifty code paths.
+
 ## Install
 
 ```bash
-pip install -e ".[dev]"
+pip install aptitude
 ```
 
-That installs the CLI in editable mode with the test dependencies; afterwards you can run `aptitude ...` or `python -m aptitude ...`. To skip the setup, use the launchers instead — `start.sh` (Linux/macOS) and `start.ps1` (Windows) create a local virtual environment on first run, install Aptitude into it, and forward every argument straight to the CLI.
+That puts the `aptitude` command on your path from [PyPI](https://pypi.org/project/aptitude/); `python -m aptitude` works too. To work on Aptitude itself, clone the repo and install it in editable mode with the test dependencies — `pip install -e ".[dev]"`. Either way, the launchers `start.sh` (Linux/macOS) and `start.ps1` (Windows) create a local virtual environment on first run, install Aptitude into it, and forward every argument straight to the CLI.
 
 ```bash
 ./start.sh providers          # Linux / macOS
