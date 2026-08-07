@@ -4,191 +4,86 @@
 
 **Generate AI skills from artifacts.**
 
-Aptitude distills documents, codebases, and web content into structured skills for use with Claude or other LLM providers. It ingests multiple file types (PDFs, EPUBs, GitHub repos, web pages), synthesizes them with an LLM, and exports to multiple formats ready for agent systems.
+Aptitude reads PDFs, EPUBs, web pages, and GitHub repositories, and turns them — plus a one-line prompt — into a reusable skill: a `SKILL.md` with its supporting files, or the same content repackaged for another runtime. The artifacts say what is true, the prompt says what is relevant.
 
-## Installation
+## Install
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-This installs Aptitude in editable mode with development dependencies (pytest for testing).
-
-## Quick start
-
-The launcher scripts set up a local virtual environment on first run, install Aptitude into it, and then run the CLI — no manual setup needed. Arguments are forwarded straight to `aptitude`.
+That installs the CLI in editable mode with the test dependencies; afterwards you can run `aptitude ...` or `python -m aptitude ...`. To skip the setup, use the launchers instead — `start.sh` (Linux/macOS) and `start.ps1` (Windows) create a local virtual environment on first run, install Aptitude into it, and forward every argument straight to the CLI.
 
 ```bash
-# Linux / macOS
-./start.sh providers
-./start.sh create -p "Build a GDPR privacy-policy skill" -i law.pdf --provider ollama
+./start.sh providers          # Linux / macOS
+.\start.ps1 providers         # Windows (PowerShell)
 ```
 
-```powershell
-# Windows (PowerShell)
-.\start.ps1 providers
-.\start.ps1 create -p "Build a GDPR privacy-policy skill" -i law.pdf --provider ollama
+## Example
+
+```bash
+aptitude create \
+  -p "Onboard a new engineer to this HTTP library: what it does, how it is laid out, and where to start reading" \
+  -i psf/requests \
+  --provider ollama --model mistral-small:latest
 ```
 
-Once installed (via the launcher or `pip install -e .`), you can also invoke the CLI directly as `aptitude ...` or `python -m aptitude ...`.
+The model names the skill, and the directory is named after it. This is the tree that run produced:
+
+```text
+out/
+└── onboard-new-engineer-to-requests-library/
+    ├── SKILL.md                     # YAML frontmatter (name, description) then the body
+    └── references/
+        └── source-material.md       # the whole corpus distilled into one reference file
+```
+
+```bash
+$ aptitude validate ./out/onboard-new-engineer-to-requests-library
+valid
+```
+
+That is the default format. The other file-writing formats write into the same flat `out/<skill-name>/` directory too, except `zip`, whose archive lands beside it as `out/<skill-name>.zip`. `--format all` runs each one in turn — [Anatomy of a Generated Skill](docs/product/anatomy.md) walks through a real `--format all` run file by file, including the format that writes nothing.
 
 ## Providers
 
-Aptitude supports five LLM providers. Select one via `--provider` (CLI), `APTITUDE_PROVIDER` (env), or `provider` in `aptitude.toml`.
-
-| Provider | API Key Environment Variable | Default Model |
-|----------|------------------------------|---|
+| Provider | API key environment variable | Default model |
+|----------|-------------------------------|----------------|
 | `claude` | `ANTHROPIC_API_KEY` | `claude-sonnet-5` |
 | `gemini` | `GEMINI_API_KEY` | `gemini-2.0-flash` |
 | `nvidia` | `NVIDIA_API_KEY` | `meta/llama-3.1-70b-instruct` |
 | `ollama` | None (local) | `llama3.1` |
 | `openai` | `OPENAI_API_KEY` | `gpt-4o-mini` |
 
-If no provider is specified and `ANTHROPIC_API_KEY` is set, defaults to `claude`; otherwise defaults to `ollama`.
+Choose one with `--provider`, `APTITUDE_PROVIDER`, or `provider` in `aptitude.toml`. With none of those set, Aptitude uses `claude` when `ANTHROPIC_API_KEY` is present and `ollama` otherwise. Full precedence rules, per-command options, and the two synthesis strategies are in [docs/product/features.md](docs/product/features.md).
 
-## Output Formats
+## Output formats
 
-Aptitude can export to multiple formats. Specify via `--format` (default: `claude-skill`), or request all formats with `--format all`.
+| Format | What it writes |
+|--------|----------------|
+| `claude-skill` | `SKILL.md` plus reference files, for Claude Canvas or Skill Builder |
+| `generic-prompt` | `<skill-name>.md` and `<skill-name>.json`, both carrying one prompt ready to paste into any chat |
+| `local-llm` | An Ollama `Modelfile` and a `system.txt`, both carrying the same prompt text as `generic-prompt` |
+| `mcp-manifest` | Nothing, today: the exporter returns early while `draft.tools` is empty, and nothing populates it |
+| `zip` | An archive of everything already in `out/<skill-name>/`, so under `--format all` it picks up the other formats' files too |
 
-| Format | Description |
-|--------|-------------|
-| `claude-skill` | SKILL.md + supporting files for use in Claude Canvas or Skill Builder |
-| `generic-prompt` | Single markdown document ready to paste into any LLM chat |
-| `local-llm` | Markdown optimized for local models (compact headers, adjusted for smaller context windows) |
-| `mcp-manifest` | MCP resource manifest (JSON) for integration with Model Context Protocol servers |
-| `zip` | Bundles the generated skill directory into a single `.zip`. Combine with `--format all` (or list the formats you want) to include every format; used alone it bundles just the `claude-skill` files. |
+Select with `--format` (default `claude-skill`), comma-separated for several, or `--format all` for every one. Per-format detail is in [docs/product/features.md](docs/product/features.md).
 
-## Synthesizers
+## Documentation
 
-Aptitude ships two synthesis strategies, selected via `--synth`:
+Start at [docs/index.md](docs/index.md), or go straight to a page:
 
-| Synth | Description |
-|-------|-------------|
-| `template` | Default. A fixed, 3-call pipeline (outline → body → refine) against the distilled corpus. Fast, deterministic, and works with every provider — including ones without tool-calling support. |
-| `agentic` | The agentic synthesizer runs an LLM agent loop with tools — `list_sources` and `read_source` to explore the ingested material selectively, `add_reference` to save distilled reference files, a forced self-critique pass, then `finish` — falling back to the template synthesizer if it doesn't converge within `--max-iterations`. Requires a provider/model capable of reliable tool use. |
+| Page | For |
+|---|---|
+| [Why Aptitude Exists](docs/why.md) | Understanding the problem it solves |
+| [What Aptitude Does](docs/product/features.md) | Commands, providers, formats, configuration |
+| [Anatomy of a Generated Skill](docs/product/anatomy.md) | What the output actually looks like |
+| [The Product Manager's View](docs/product/perspective.md) | Why it was sequenced this way |
+| [Where This Goes](docs/product/roadmap.md) | What is planned, and what is not |
+| [The Architect's View](docs/engineering/architecture.md) | How fifty combinations fit in 1,371 lines |
+| [Key Decisions](docs/engineering/decisions.md) | What was chosen, rejected, and what would change it |
+| [Adding a Provider, Format, or Adapter](docs/engineering/extending.md) | Contributing code |
+| [The Art of the Possible](docs/possible.md) | Recipes and speculation |
+| [What It Doesn't Do Yet](docs/limitations.md) | Known gaps, with evidence |
 
-Select the agentic synthesizer with `--synth agentic`, and tune its iteration budget with `--max-iterations` (default `12`, the max number of agent loop turns before giving up).
-
-**Fallback behavior:** if the agent doesn't converge on a `finish` call within `--max-iterations` (e.g. the model never emits a valid tool call, or the provider doesn't support tools), `agentic` automatically falls back to the `template` synthesizer so the run still succeeds — this is the intended, robust default. The generated skill's provenance notes when the fallback path was used.
-
-```bash
-aptitude create -p "Build a skill for our API" -i docs.pdf --provider claude --synth agentic --max-iterations 20
-```
-
-## Configuration
-
-Aptitude resolves **provider, model, output format, and synthesizer** with the following precedence (highest to lowest):
-
-1. **CLI options** (e.g., `--provider claude`, `--model gpt-4o-mini`, `--format zip`, `--synth agentic`)
-2. **Environment variables** (`APTITUDE_PROVIDER`, `APTITUDE_MODEL`, `APTITUDE_FORMAT`, `APTITUDE_SYNTH`)
-3. **`aptitude.toml`** (file in current directory: `provider`, `model`, `format`, `synth`)
-4. **Defaults** (provider: claude if `ANTHROPIC_API_KEY` else ollama; format: `claude-skill`; synth: `template`)
-
-Example `aptitude.toml`:
-```toml
-provider = "ollama"
-model = "llama3.1"
-format = "claude-skill"
-synth = "agentic"
-```
-
-## Commands
-
-### `create` — Generate a skill from artifacts
-
-```bash
-aptitude create --prompt "PROMPT" --input FILE [--input FILE ...] [OPTIONS]
-```
-
-**Options:**
-- `--prompt, -p` — Skill description (required). Use `@path/to/file.txt` to read a long prompt from disk.
-- `--input, -i` — Source artifact: file path, GitHub URL, or web URL (repeatable).
-- `--type` — Force the artifact type for **all** `-i` inputs in this run: `auto`, `pdf`, `epub`, `web`, or `github` (default: `auto`, which detects each input's type independently). Use separate runs if different inputs need different forced types.
-- `--provider` — LLM provider name (overrides env/config).
-- `--model` — Model ID (overrides env/config).
-- `--format` — Export format(s): `claude-skill`, `generic-prompt`, `local-llm`, `mcp-manifest`, `zip`, or `all`. Comma-separated for multiple, e.g., `--format claude-skill,zip`. Overrides `APTITUDE_FORMAT` / `aptitude.toml`; ultimate default is `claude-skill`.
-- `--out` — Output directory (default: `./out`). All formats write to `out/<skill-name>/`.
-- `--budget` — Maximum tokens to synthesize (default: 6000).
-- `--synth` — Synthesis strategy: `template` (default) or `agentic`. Overrides `APTITUDE_SYNTH` / `aptitude.toml`; ultimate default is `template`. See [Synthesizers](#synthesizers).
-- `--max-iterations` — Max agent loop turns for `--synth agentic` before falling back to `template` (default: 12). Ignored by `template`.
-- `--dry-run` — Ingest and process the artifacts and print the distilled corpus and planned skill outline, then stop before synthesis. Note: for inputs larger than `--budget`, the distillation step itself summarizes via the selected provider (making LLM calls), so it is not entirely free. Use `--provider ollama` (local) for a zero-cost preview.
-- `-v` — Verbose output.
-
-### `providers` — List available providers and their configuration status
-
-```bash
-aptitude providers
-```
-
-Shows each provider name and whether it is "ready" (API key configured or local) or "no key".
-
-### `formats` — List all available export formats
-
-```bash
-aptitude formats
-```
-
-### `validate` — Validate a skill directory
-
-```bash
-aptitude validate PATH
-```
-
-Checks that a skill directory follows the expected structure. Exits with code 0 if valid, 2 if invalid.
-
-### `init` — Initialize aptitude.toml in the current directory
-
-```bash
-aptitude init
-```
-
-Creates `aptitude.toml` with sensible defaults (ollama + llama3.1 + claude-skill format).
-
-## Examples
-
-### 1. PDF → Claude Skill via Ollama
-
-Generate a structured skill from a PDF document using a local Ollama model:
-
-```bash
-aptitude create \
-  --prompt "Skill for drafting GDPR privacy policies" \
-  --input privacy-law.pdf \
-  --provider ollama
-```
-
-Output: `./out/<skill-name>/` containing SKILL.md and supporting files in a flat structure.
-
-### 2. Repository + Web Page → All Formats via Claude
-
-Combine source code and documentation into multiple export formats using Claude:
-
-```bash
-aptitude create \
-  --prompt "Skill for using our API" \
-  --input github.com/acme/sdk \
-  --input https://docs.acme.dev \
-  --provider claude \
-  --format all
-```
-
-Output: `./out/<skill-name>/` containing all format files in a flat structure (SKILL.md, `<skill-name>.md`, `<skill-name>.json`, Modelfile, system.txt, mcp.json, and reference materials), plus `./out/<skill-name>.zip` bundling the entire skill directory.
-
-### 3. Preview the Corpus Without Synthesis
-
-Preview the distilled corpus before committing to a full skill synthesis, using a zero-cost local provider:
-
-```bash
-aptitude create \
-  --prompt "Skill for analyzing quarterly earnings reports" \
-  --input big-book.epub \
-  --provider ollama \
-  --dry-run
-```
-
-Output: Prints the extracted and processed corpus (first 2000 characters) to stdout, then exits without writing files or calling the LLM synthesis step. Use `--provider ollama` (or another local provider) to avoid API charges. Note: if the corpus exceeds `--budget` tokens, the distillation step will still call the provider to summarize chunks.
-
-## See Also
-
-- `aptitude --help` — Show all commands and global options
-- `aptitude COMMAND --help` — Show help for a specific command
+`aptitude --help` and `aptitude COMMAND --help` cover the same surface from the terminal.
