@@ -12,7 +12,6 @@ runner = CliRunner()
 
 ROOT = Path(__file__).resolve().parent.parent
 COMMANDS = ["create", "providers", "formats", "validate", "init"]
-LINK = re.compile(r"\[[^\]]*?\]\(([^)]+)\)")
 
 
 def _doc_paths() -> list[Path]:

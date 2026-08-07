@@ -232,3 +232,5 @@ pip install -e ".[dev]"
 python -m pytest -q          # offline, live tests deselected
 python -m pytest -m live     # collects nothing today; for live tests once they exist
 ```
+
+[← Back to the documentation index](../index.md)

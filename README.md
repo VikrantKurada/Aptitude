@@ -43,7 +43,7 @@ $ aptitude validate ./out/onboard-new-engineer-to-requests-library
 valid
 ```
 
-That is the default format. Every other format writes into the same flat `out/<skill-name>/` directory, and `--format all` runs each one in turn — [Anatomy of a Generated Skill](docs/product/anatomy.md) walks through a real `--format all` run file by file, including the format that writes nothing.
+That is the default format. The other file-writing formats write into the same flat `out/<skill-name>/` directory too, except `zip`, whose archive lands beside it as `out/<skill-name>.zip`. `--format all` runs each one in turn — [Anatomy of a Generated Skill](docs/product/anatomy.md) walks through a real `--format all` run file by file, including the format that writes nothing.
 
 ## Providers
 

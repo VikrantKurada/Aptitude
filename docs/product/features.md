@@ -41,9 +41,9 @@ Aptitude exports to five formats, selected via `--format` (default: `claude-skil
 |--------|-------------|
 | `claude-skill` | `SKILL.md` (with YAML frontmatter) plus reference/script files, for use in Claude Canvas or Skill Builder |
 | `generic-prompt` | A single markdown document and a matching JSON file, ready to paste into any LLM chat |
-| `local-llm` | An Ollama `Modelfile` (skill content as the `SYSTEM` prompt) plus a plain `system.txt` for runtimes like LM Studio — the same prompt content as `generic-prompt`, just packaged differently; not smaller and not context-window-adjusted |
-| `mcp-manifest` | An MCP resource manifest (JSON) for integration with Model Context Protocol servers |
-| `zip` | Runs the `claude-skill` export, then bundles that directory into a single `<skill-name>.zip` |
+| `local-llm` | An Ollama `Modelfile` (skill content as the `SYSTEM` prompt, with `FROM` hardcoded to `llama3.1` regardless of which model you actually used) plus a plain `system.txt` for runtimes like LM Studio — the same prompt content as `generic-prompt`, just packaged differently; not smaller and not context-window-adjusted |
+| `mcp-manifest` | Nothing, today: the exporter returns early while `draft.tools` is empty, and nothing populates it |
+| `zip` | An archive of everything already in `out/<skill-name>/`, so under `--format all` it picks up the other formats' files too |
 
 `mcp-manifest` currently ships no content: `SkillDraft` has a `tools` field for MCP tool specs, but neither the `template` synthesizer nor the `agentic` synthesizer populates it — the agentic synthesizer's own tools (`list_sources`, `read_source`, `add_reference`, `finish`) are for exploring source material during synthesis, not for the resulting skill. Because `draft.tools` is always empty, the exporter returns without writing any file at all (not even an `mcp.json` with an empty tools array). See [the limitations page](../limitations.md) for tracking status.
 
@@ -108,7 +108,7 @@ aptitude create --prompt "PROMPT" --input FILE [--input FILE ...] [OPTIONS]
 | `--provider` | resolved per [Configuration](#configuration) | LLM provider name. |
 | `--model` | provider's default model | Model ID. |
 | `--format` | resolved per [Configuration](#configuration), ultimately `claude-skill` | Export format(s): `claude-skill`, `generic-prompt`, `local-llm`, `mcp-manifest`, `zip`, or `all`. Comma-separated for multiple. |
-| `--out` | `./out` | Output directory. All formats write to `out/<skill-name>/`. |
+| `--out` | `./out` | Output directory. The skill directory is `out/<skill-name>/`; the `zip` archive lands beside it at `out/<skill-name>.zip`. |
 | `--budget` | `6000` | Maximum tokens to synthesize from. |
 | `--synth` | resolved per [Configuration](#configuration), ultimately `template` | Synthesis strategy: `template` or `agentic`. See [Synthesizers](#synthesizers). |
 | `--max-iterations` | `12` | Max agent loop turns for `--synth agentic` before falling back to `template`. Ignored by `template`. |
@@ -144,3 +144,5 @@ aptitude init
 ```
 
 Writes an `aptitude.toml` with `provider = "ollama"`, `model = "llama3.1"`, `format = "claude-skill"`. Exits with code 1 without writing anything if `aptitude.toml` already exists.
+
+[← Back to the documentation index](../index.md)

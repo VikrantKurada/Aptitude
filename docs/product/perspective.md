@@ -37,3 +37,5 @@ The smaller version is worse, because the one signal that exists never reaches t
 Report the fallback, then build the scoring, and the critique count stops being a preference. That ordering is [the roadmap](roadmap.md).
 
 [^1]: The §11 text in the repository today names the four tools that shipped, because it was corrected afterwards — not foresight. Decision 3 on [the decisions page](../engineering/decisions.md) has both commit hashes.
+
+[← Back to the documentation index](../index.md)

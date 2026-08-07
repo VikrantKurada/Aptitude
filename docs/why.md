@@ -4,7 +4,7 @@ The first example in Aptitude's design spec is a command that reads a privacy-la
 
 That is the situation the tool was built for, and it is not a knowledge problem.
 
-Skills became the unit of reuse for agents because they are the smallest thing you can hand a model that changes what it does. The format makes the constraint visible. A Claude Skill is a `SKILL.md` whose name has to match `^[a-z0-9]+(-[a-z0-9]+)*$` and fit in 64 characters, whose description has to fit in 1024, and whose body is markdown (`aptitude/validate/validator.py:18-24`). The description is a "Use when…" trigger — that exact phrasing is in the system prompt Aptitude hands its own agent (`aptitude/synthesize/agent_prompts.py`). Everything a 300-page standard implies has to arrive through an opening that size.
+Skills became the unit of reuse for agents because they are the smallest thing you can hand a model that changes what it does. The format makes the constraint visible. A Claude Skill is a `SKILL.md` whose name has to match `^[a-z0-9]+(-[a-z0-9]+)*$` and fit in 64 characters, whose description has to fit in 1024 (`aptitude/validate/validator.py:18-24`), and whose body is markdown. The description is a "Use when…" trigger — that exact phrasing is in the system prompt Aptitude hands its own agent (`aptitude/synthesize/agent_prompts.py`). Everything a 300-page standard implies has to arrive through an opening that size.
 
 So the scarce thing is shape, not knowledge. An agent cannot act on the standard. It needs the twelve rules the standard implies, in the form its runtime expects, small enough that loading them is not itself a decision.
 
@@ -23,3 +23,5 @@ That is the whole bet. Skills are cheap enough to be disposable, and most of wha
 [^1]: `aptitude validate` checks that the name matches the regex, that the description is non-empty and under 1024 characters, and warns when the body is under 40 characters (`aptitude/validate/validator.py:18-28`). Nothing scores whether the content is grounded in the sources. See [limitations.md](limitations.md).
 
 [^2]: Five providers, five formats, two synthesizers. Why that multiplies instead of adding is the subject of [The Architect's View](engineering/architecture.md).
+
+[← Back to the documentation index](index.md)

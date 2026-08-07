@@ -56,3 +56,5 @@ Four things from the v1 non-goals stay non-goals: a web UI, a hosted service, de
 The first two are the same decision twice. Aptitude is about 1,371 lines and a `template` run against `--provider ollama` costs nothing but time and electricity; the argument in [why.md](../why.md) is that skills become disposable once the marginal cost of one is near zero. A hosted service reintroduces exactly the cost that argument removes, and a UI is a second surface to keep in step with a CLI that already changes faster than its docs.
 
 Deep crawling is a different kind of refusal. The GitHub adapter reads `README*`, `docs/**/*.md` truncated to 4000 characters, and function and class signatures from seven file extensions (`ingest/github.py:37-55`). That is a deliberately shallow read, and it is what gives a whole repository a chance of fitting under a 6000-token budget. Crawling more is not obviously an improvement while nothing measures the output: a larger corpus, more summarization calls, and no evidence of a better skill. Which is the conclusion everywhere else on this page too. Build the scorer first.
+
+[← Back to the documentation index](../index.md)

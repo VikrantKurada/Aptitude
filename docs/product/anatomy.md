@@ -98,3 +98,5 @@ $ echo $?
 `aptitude validate` exits `0` for a valid skill directory (printing `valid`, plus any warnings) and `2` for an invalid one (printing `invalid: <reason>`), per `aptitude/cli.py`'s `validate` command.
 
 For the full command and configuration reference, see [features.md](features.md). For what the pipeline doesn't do yet — including the two gaps referenced above — see [limitations.md](../limitations.md).
+
+[← Back to the documentation index](../index.md)
